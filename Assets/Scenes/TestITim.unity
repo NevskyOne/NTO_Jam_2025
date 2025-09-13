@@ -445,6 +445,7 @@ MonoBehaviour:
   attackDataSO: {fileID: 11400000, guid: 1b39ad16579d8014789ec12b657e0e9c, type: 2}
   moveDataSO: {fileID: 11400000, guid: a063f6f0a50e31f46a48de78f9f103c6, type: 2}
   playerPrefab: {fileID: 2538940657382975165, guid: d158075ebb18b084d95b0fc863763b7a, type: 3}
+  inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
 --- !u!4 &1677565125
 Transform:
   m_ObjectHideFlags: 0
@@ -460,6 +461,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1841721479 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1226295817882423881, guid: d158075ebb18b084d95b0fc863763b7a, type: 3}
+  m_PrefabInstance: {fileID: 6785018977313756730}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0684b77e51480c5488aaa3b6f77cf02e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
 --- !u!1001 &6785018977313756730
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -468,18 +480,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 803076777366842012, guid: d158075ebb18b084d95b0fc863763b7a, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.95
-      objectReference: {fileID: 0}
     - target: {fileID: 1589038628922950442, guid: d158075ebb18b084d95b0fc863763b7a, type: 3}
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 2538940657382975165, guid: d158075ebb18b084d95b0fc863763b7a, type: 3}
-      propertyPath: _groundCheckRadius
-      value: 0.1
-      objectReference: {fileID: 0}
+      propertyPath: _groundChecker
+      value: 
+      objectReference: {fileID: 1841721479}
     - target: {fileID: 6105516385855166886, guid: d158075ebb18b084d95b0fc863763b7a, type: 3}
       propertyPath: m_LocalPosition.x
       value: -7.74
