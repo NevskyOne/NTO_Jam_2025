@@ -40,6 +40,9 @@ public class Player : MonoBehaviour, IMovable, IAttack
     // Coroutine для парирования
     private Coroutine _currentParryCoroutine;
 
+    [SerializeField] private Transform _dialogueBubblePos;
+    public Transform DialogueBubblePos => _dialogueBubblePos;
+
     [Inject]
     private void Construct(PlayerDataSO playerData, AttackDataSO attackData, MoveDataSO moveData)
     {
