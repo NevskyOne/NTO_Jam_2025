@@ -1,76 +1,107 @@
 using UnityEngine;
 using Core.Data.ScriptableObjects;
+using Core.Interfaces;
 using System.Collections.Generic;
 
-public class SomeAttackLogic
+public class MainAttackLogic : IAttack
 {
-    private readonly AttackDataSO _attackData;
-    private List<IHittable> _hitObjects = new List<IHittable>();
-    
-    public SomeAttackLogic(AttackDataSO attackData)
+    private readonly AttackDataSO _data;
+    private readonly Transform _owner;
+    private readonly List<IHittable> _hitObjects = new();
+
+    public MainAttackLogic(AttackDataSO data, Transform owner)
     {
-        _attackData = attackData ?? ScriptableObject.CreateInstance<AttackDataSO>();
+        _data = data;
+        _owner = owner;
     }
-    
-    public void PerformAttack(Vector2 direction, Vector3 position)
+
+    public void PerformAttack(Vector2 direction)
     {
+        if (_owner == null) return;
         _hitObjects.Clear();
-        Vector2 attackPoint = (Vector2)position + direction * _attackData.AttackRadius * 0.5f;
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(attackPoint, _attackData.AttackRadius);
-        
-        foreach (var hitCollider in hitColliders)
+        if (direction == Vector2.zero) direction = Vector2.right;
+
+        Vector2 point = (Vector2)_owner.position + direction.normalized * _data.AttackRadius * 0.5f;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(point, _data.AttackRadius);
+
+        foreach (var col in hits)
         {
-            IHittable hittable = hitCollider.GetComponent<IHittable>();
+            var hittable = col.GetComponent<IHittable>();
             if (hittable != null && !_hitObjects.Contains(hittable))
             {
                 _hitObjects.Add(hittable);
-                hittable.TakeHit(_attackData.CalculateDamage(), direction * _attackData.KnockbackForce);
+                hittable.TakeDamage(_data.BaseDamage);
             }
         }
-        
-        Debug.Log($"Attack performed in direction {direction}, damage: {_attackData.CalculateDamage()}, radius: {_attackData.AttackRadius}");
+
+        Debug.Log($"MainAttack: dir={direction}, dmg={_data.BaseDamage}, r={_data.AttackRadius}");
     }
-    
-    public void PerformAirAttack(Vector2 direction, Vector3 position)
-    {
-        _hitObjects.Clear();
-        float airAttackRadius = _attackData.AttackRadius * 1.2f;
-        float airAttackDamage = _attackData.CalculateDamage() * 1.5f;
-        Vector2 attackPoint = (Vector2)position + Vector2.down * airAttackRadius * 0.5f;
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(attackPoint, airAttackRadius);
-        
-        foreach (var hitCollider in hitColliders)
-        {
-            IHittable hittable = hitCollider.GetComponent<IHittable>();
-            if (hittable != null && !_hitObjects.Contains(hittable))
-            {
-                _hitObjects.Add(hittable);
-                hittable.TakeHit(airAttackDamage, Vector2.down * _attackData.KnockbackForce * 1.5f);
-            }
-        }
-        
-        Debug.Log($"Air attack performed, damage: {airAttackDamage}, radius: {airAttackRadius}");
-    }
-    
-    public void PerformParry(Vector3 position)
-    {
-        float parryRadius = _attackData.AttackRadius * 1.5f;
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(position, parryRadius);
-        
-        foreach (var hitCollider in hitColliders)
-        {
-            // Здесь логика для отражения снарядов
-            // Projectile projectile = hitCollider.GetComponent<Projectile>();
-            // if (projectile != null) projectile.Reflect();
-        }
-        
-        Debug.Log($"Parry performed, radius: {parryRadius}");
-    }
+
+    public float GetDamage() => _data.BaseDamage;
+    public float GetAttackRadius() => _data.AttackRadius;
 }
 
-// Интерфейс для объектов, которые могут получать урон
-public interface IHittable
+public class DownAttackLogic : IAttack
 {
-    void TakeHit(float damage, Vector2 knockback);
-    void Stun(float duration);
+    private readonly AttackDataSO _data;
+    private readonly Transform _owner;
+    private readonly List<IHittable> _hitObjects = new();
+
+    public DownAttackLogic(AttackDataSO data, Transform owner)
+    {
+        _data = data;
+        _owner = owner;
+    }
+
+    public void PerformAttack(Vector2 direction)
+    {
+        if (_owner == null) return;
+        _hitObjects.Clear();
+        Vector2 dir = Vector2.down;
+        float radius = _data.AttackRadius * 1.2f;
+        float dmg = _data.BaseDamage; // Можем масштабировать при необходимости
+
+        Vector2 point = (Vector2)_owner.position + dir * radius * 0.5f;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(point, radius);
+
+        foreach (var col in hits)
+        {
+            var hittable = col.GetComponent<IHittable>();
+            if (hittable != null && !_hitObjects.Contains(hittable))
+            {
+                _hitObjects.Add(hittable);
+                hittable.TakeDamage(dmg);
+            }
+        }
+
+        Debug.Log($"DownAttack: dmg={dmg}, r={radius}");
+    }
+
+    public float GetDamage() => _data.BaseDamage;
+    public float GetAttackRadius() => _data.AttackRadius * 1.2f;
+}
+
+public class ParryAttackLogic : IAttack
+{
+    private readonly AttackDataSO _data;
+    private readonly Transform _owner;
+
+    public ParryAttackLogic(AttackDataSO data, Transform owner)
+    {
+        _data = data;
+        _owner = owner;
+    }
+
+    public void PerformAttack(Vector2 direction)
+    {
+        if (_owner == null) return;
+        float radius = _data.AttackRadius * 1.5f;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(_owner.position, radius);
+
+        // Здесь может быть логика отражения снарядов/стан и т.п.
+        Debug.Log($"Parry: r={radius}, hits={hits.Length}");
+    }
+
+    public float GetDamage() => 0f;
+    public float GetAttackRadius() => _data.AttackRadius * 1.5f;
 }
