@@ -1,16 +1,5 @@
-using UnityEngine;
-
-namespace Core.Interfaces
+public interface IAnimatable
 {
-    /// <summary>
-    /// Интерфейс для объектов, которые могут быть анимированы
-    /// </summary>
-    public interface IAnimatable
-    {
-        /// <summary>
-        /// Воспроизведение анимации
-        /// </summary>
-        /// <param name="animationName">Имя анимации</param>
-        void PlayAnimation(string animationName);
-    }
+    void PlayAnimation(string animationName);
 }
+

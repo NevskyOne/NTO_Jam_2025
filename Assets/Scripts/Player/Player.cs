@@ -10,7 +10,6 @@ public class Player : MonoBehaviour, IHittable, IHealable
 {
     [Header("Компоненты")]
     [SerializeField] private Rigidbody2D _rigidbody;
-    [SerializeField] private Collider2D _collider;
     [SerializeField] private GroundChecker _groundChecker;
 
     // Данные игрока
@@ -49,6 +48,8 @@ public class Player : MonoBehaviour, IHittable, IHealable
     private List<IAttack> _mainAttackSet = new();
     private List<IAttack> _abilitiesSet = new();
 
+    private List<IEffect> _effectSet;
+
     // Runtime-значения PlayerData
     private int _currentHealth;
     private int _currentMoney;
@@ -72,7 +73,6 @@ public class Player : MonoBehaviour, IHittable, IHealable
     private void Awake()
     {
         if (_rigidbody == null) _rigidbody = GetComponent<Rigidbody2D>();
-        if (_collider == null) _collider = GetComponent<Collider2D>();
 
         _movement = new PlayerMovementLogic(_moveData, _rigidbody);
         _mainAttack = new MainAttackLogic(_attackData, transform);
@@ -221,8 +221,6 @@ public class Player : MonoBehaviour, IHittable, IHealable
         }
     }
 
-    private void OnGroundChanged(bool grounded) { /* больше не используется; землю обрабатывает IMovable */ }
-
     // Входные методы движения/боя
     public void Move(Vector2 direction, float deltaTime)
     {
@@ -262,10 +260,6 @@ public class Player : MonoBehaviour, IHittable, IHealable
 
         Debug.Log($"Dash executed dir={_lastDirection}, dashTime={_dashTimeLeft}, cd={_dashCooldownLeft}");
     }
-
-    public bool IsGrounded() => _movement.IsGrounded();
-    public Vector2 GetVelocity() => _movement.GetVelocity();
-    public void SetVelocity(Vector2 velocity) => _movement.SetVelocity(velocity);
 
     // Входные методы из инпута
     public void PerformAttack(Vector2 direction)
@@ -354,6 +348,12 @@ public class Player : MonoBehaviour, IHittable, IHealable
         while (_abilitiesSet.Count <= 1) _abilitiesSet.Add(null);
         _abilitiesSet[1] = ability;
     }
+    
+    public void AddEffect(IEffect effect)
+    {
+        _effectSet.Add(effect);
+        effect.ApplyEffect();
+    }
 
     public float GetDamage() => _attackData.BaseDamage;
     public float GetAttackRadius() => _attackData.AttackRadius;
@@ -400,6 +400,5 @@ public class Player : MonoBehaviour, IHittable, IHealable
     {
         _movement.SetExtraJumps(extra);
     }
-
-    private void OnDrawGizmos() { }
+    
 }

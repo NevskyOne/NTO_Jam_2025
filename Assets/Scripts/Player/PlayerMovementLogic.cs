@@ -32,18 +32,13 @@ public class PlayerMovementLogic : IMovable
     
     public void Jump()
     {
-        TryJump();
-    }
-    
-    public bool TryJump()
-    {
-        if (_rigidbody == null) return false;
+        if (_rigidbody == null) return;
         int maxJumps = _moveData.MaxJumpCount + _extraJumps;
-        if (!_isGrounded && _jumpCount >= maxJumps) return false;
+        if (!_isGrounded && _jumpCount >= maxJumps) return;
         _jumpCount++;
         _rigidbody.linearVelocity = new Vector2(_rigidbody.linearVelocity.x, _moveData.JumpForce);
-        return true;
     }
+    
     
     public void Dash(Vector2 direction)
     {
