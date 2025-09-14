@@ -11,8 +11,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9d1dbbe9deb00044b04622586769dff, type: 3}
   m_Name: PlayerData
-  m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.PlayerDataSO
-  maxHealth: 100
-  startMoney: 0
-  startReputation: 0
-  maxReputation: 100
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDataSO
+  _attackSet: []
+  _maxHealth: 3
+  _startMoney: 0
+  _startReputation: 0
+  references:
+    version: 2
+    RefIds: []

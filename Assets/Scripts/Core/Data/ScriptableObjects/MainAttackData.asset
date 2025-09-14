@@ -9,8 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c16cfde69dc1fd41ab6f3afd221ba19, type: 3}
-  m_Name: AttackData
-  m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.AttackDataSO
+  m_Script: {fileID: 11500000, guid: d922c6344616447d98f8c531ebae8b58, type: 3}
+  m_Name: MainAttackData
+  m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.MainAttackData
   <InputBinding>k__BackingField: 
   <BaseDamage>k__BackingField: 0
+  <Radius>k__BackingField: 1.5
+  <ForwardOffset>k__BackingField: 0.7
+  <AttackCooldown>k__BackingField: 0.8
