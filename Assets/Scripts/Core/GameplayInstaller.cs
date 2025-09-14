@@ -24,6 +24,7 @@ public class GameplayInstaller : MonoInstaller
         
         Container.Bind<Camera>().FromInstance(camera).AsSingle();
         Container.Bind<DialogueStartSystem>().FromInstance(dialogueStartSystem).AsSingle();
-        
+
+        Container.Bind<DragSystem>().AsSingle();
     }
 }

@@ -28,8 +28,8 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public enum PlayerState { Idle, Moving, Jumping, Dashing, Attacking, Parrying }
     private PlayerState _state = PlayerState.Idle;
     
-    private List<IAttack> _mainAttackSet = new();
-    private readonly List<IAttack> _abilitiesSet = new();
+    private List<IAttack> _mainAttackSet = new(3);
+    private readonly List<IAttack> _abilitiesSet = new(3);
     private readonly List<EffectBase> _activeEffects = new();
 
     private Coroutine _foodDeactivationRoutine;
@@ -37,6 +37,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private CurrentPlayerData _data;
 
     public PlayerState State => _state;
+    public CurrentPlayerData Data => _data;
     public Transform DialogueBubblePos => _dialogueBubblePos;
     public PlayerMovementLogic Movement => (PlayerMovementLogic)_movement;
 
@@ -89,6 +90,21 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     }
 
 
+    private void AddAbility(int toSlot, IAttack food, int foodId)
+    {
+        if (_abilitiesSet[toSlot] != null)
+        {
+            _data.InventoryFood.Add(_data.UsedFood[toSlot]);
+        }
+        _abilitiesSet[toSlot] = food;
+        _data.UsedFood[toSlot] = foodId;
+    }
+    
+    private void MoveAbility(IAttack inventFood, int inventFoodId, IAttack useFood, int useFoodId)
+    {
+        
+    }
+    
     private void SwitchAbility(int fromSlot, int toSlot)
     {
         (_abilitiesSet[fromSlot], _abilitiesSet[toSlot]) = (_abilitiesSet[toSlot], _abilitiesSet[fromSlot]);
@@ -155,6 +171,13 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public void Die()
     {
         Debug.Log("Player died!");
+    }
+    
+    public bool TryBuy(int price)
+    {
+        if (_data.Money < price) return false;
+        _data.Money -= price;
+        return true;
     }
 
     public void Heal(int amount)

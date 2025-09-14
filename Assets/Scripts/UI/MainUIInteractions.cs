@@ -1,6 +1,6 @@
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.InputSystem;
+using Yarn.Unity;
 using Zenject;
 
 public class MainUIInteractions : MonoBehaviour
@@ -12,10 +12,10 @@ public class MainUIInteractions : MonoBehaviour
     [Inject]
     private void Construct(PlayerInput input)
     {
-        input.actions["Escape"].performed += Escape;
+        input.actions["Escape"].performed += CloseUI;
     }
 
-    private void Escape(InputAction.CallbackContext obj)
+    private void CloseUI(InputAction.CallbackContext obj)
     {
         switch (_state)
         {
@@ -34,19 +34,14 @@ public class MainUIInteractions : MonoBehaviour
         }
     }
 
-    public void OpenPaper()
+    public void ChangePaperState(bool active)
     {
         
     }
     
     
-    
-    public void OpenShop()
-    {
-        
-    }
-    
-    public void CloseShop()
+    [YarnCommand("OpenShop")]
+    public void ChangeShopState(bool active)
     {
         
     }
