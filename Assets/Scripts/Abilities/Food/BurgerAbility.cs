@@ -5,12 +5,11 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Бургер — накладывает на врагов "жирность" (ускоряет врага, но наносит DoT)
-    public class BurgerAbility : FoodAttackBase
+    public class BurgerAbility : IAttack
     {
-        public BurgerAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 1.0f;
+        AttackDataSO IAttack.Data { get; set; }
 
-        public override void PerformAttack(Vector2 direction)
+        public void PerformAttack(Vector2 direction)
         {
             if (Owner == null) return;
             

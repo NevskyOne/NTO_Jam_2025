@@ -1,23 +1,39 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 public class ParryAttackLogic : IAttack
 {
-    private readonly AttackDataSO _data;
-    private readonly Transform _owner;
-    private float _attackDurationTimer;
-
-    public ParryAttackLogic(AttackDataSO data, Transform owner)
+    [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+    private ParryAttackData Data => (ParryAttackData)((IAttack)this).Data;
+    
+    private Transform _owner;
+    private Player _player;
+    private Coroutine _cooldownRoutine;
+    
+    [Inject]
+    private void Construct(Player player)
     {
-        _data = data;
-        _owner = owner;
+        _owner = player.transform;
+        _player = player;
+    }
+
+    public void Activate()
+    {
+    }
+
+    public void Deactivate()
+    {
     }
 
     public void PerformAttack(Vector2 direction)
     {
+        if (_owner == null || _cooldownRoutine != null) return;
         // Логика парирования - создаем защитную область вокруг игрока
-        float radius = _data.AttackRadius * _data.ParryRadiusMultiplier;
+        float radius = Data.Radius;
         Collider2D[] hits = Physics2D.OverlapCircleAll(_owner.position, radius);
         
         // Единичная визуализация парирования
@@ -30,24 +46,14 @@ public class ParryAttackLogic : IAttack
             // Здесь может быть логика отражения снарядов или оглушения врагов
             Debug.Log($"Parry detected: {hit.name}");
         }
-
-        Debug.Log($"Parry: r={_data.AttackRadius}");
-        _attackDurationTimer = _data.ParryCooldown;
+        
+        _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
     }
 
-    public float GetAttackRadius() => _data.AttackRadius * _data.ParryRadiusMultiplier;
-
-    public float GetAttackDuration()
+    private IEnumerator CooldownRoutine()
     {
-        return _attackDurationTimer;
-    }
-
-    public void UpdateCooldown()
-    {
-        if (_attackDurationTimer > 0)
-        {
-            _attackDurationTimer -= Time.deltaTime;
-        }
+        yield return new WaitForSeconds(Data.AttackCooldown);
+        _cooldownRoutine = null;
     }
 
     private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)

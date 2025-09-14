@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Айс латте — выпускает ледяные осколки в врагов в направлении курсора по клику, накладывает медлительность на врагов в течение n секунд (2x на огонь)
-    public class IcedLatteAbility : FoodAttackBase
+    public class IcedLatteAbility : IAttack
     {
         public IcedLatteAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
         protected override float DamageMultiplier => 0.8f;

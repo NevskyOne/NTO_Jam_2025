@@ -1,30 +1,50 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
+using Zenject;
 
-public class MainAttackLogic : IDamageAttack
+public class MainAttackLogic : IAttack
 {
-    private readonly AttackDataSO _data;
-    private readonly Transform _owner;
+    [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+    private MainAttackData Data => (MainAttackData)((IAttack)this).Data;
+    
+    private Transform _owner;
     private readonly List<IHittable> _hitObjects = new();
-    private float _attackDurationTimer;
+    private Player _player;
+    private PlayerInput _input;
+    private Coroutine _cooldownRoutine;
 
-    public MainAttackLogic(AttackDataSO data, Transform owner)
+    [Inject]
+    private void Construct(Player player, PlayerInput input)
     {
-        _data = data;
-        _owner = owner;
+        _owner = player.transform;
+        _player = player;
+        _input = input;
+    }
+
+    public void Activate()
+    {
+        _input.actions[Data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
+    }
+
+    public void Deactivate()
+    {
+        _input.actions[Data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void PerformAttack(Vector2 direction)
     {
-        if (_owner == null) return;
+        if (_owner == null || _cooldownRoutine != null) return;
+        
         _hitObjects.Clear();
         if (direction == Vector2.zero) direction = Vector2.right;
 
         // Атака направлена вперед от игрока
-        float radius = _data.AttackRadius * _data.MainAttackRadiusMultiplier;
-        Vector2 attackCenter = (Vector2)_owner.position + direction.normalized * radius * _data.MainAttackForwardOffset;
+        float radius = Data.Radius;
+        Vector2 attackCenter = (Vector2)_owner.position + direction.normalized * radius * Data.ForwardOffset;
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
 
         // Единичная визуализация атаки
@@ -39,29 +59,18 @@ public class MainAttackLogic : IDamageAttack
             if (hittable != null && !_hitObjects.Contains(hittable))
             {
                 _hitObjects.Add(hittable);
-                hittable.TakeDamage(_data.MainAttackDamage);
-                Debug.Log($"MainAttack hit: {col.name} for {_data.MainAttackDamage} damage");
+                hittable.TakeDamage(Data.BaseDamage);
+                Debug.Log($"MainAttack hit: {col.name} for {Data.BaseDamage} damage");
             }
         }
-
-        Debug.Log($"MainAttack: dir={direction}, dmg={_data.MainAttackDamage}, r={radius}");
-        _attackDurationTimer = _data.MainAttackCooldown;
+        
+        _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
     }
 
-    public float GetDamage() => _data.BaseDamage;
-    public float GetAttackRadius() => _data.AttackRadius;
-
-    public float GetAttackDuration()
+    private IEnumerator CooldownRoutine()
     {
-        return _attackDurationTimer;
-    }
-
-    public void UpdateCooldown()
-    {
-        if (_attackDurationTimer > 0)
-        {
-            _attackDurationTimer -= Time.deltaTime;
-        }
+        yield return new WaitForSeconds(Data.AttackCooldown);
+        _cooldownRoutine = null;
     }
 
     private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)

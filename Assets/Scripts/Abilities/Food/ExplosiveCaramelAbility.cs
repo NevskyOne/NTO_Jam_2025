@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Взрывная карамель — ставит бомбу, которая взрывается через n секунд
-    public class ExplosiveCaramelAbility : FoodAttackBase
+    public class ExplosiveCaramelAbility : IAttack
     {
         public ExplosiveCaramelAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
         protected override float DamageMultiplier => 1.3f;

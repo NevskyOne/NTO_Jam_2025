@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Корейская морковка — дает дабл-джамп + урон при падении
-    public class KoreanCarrotAbility : FoodAttackBase
+    public class KoreanCarrotAbility : IAttack
     {
         private bool _extraJumpUsed = false;
         private bool _wasFalling = false;

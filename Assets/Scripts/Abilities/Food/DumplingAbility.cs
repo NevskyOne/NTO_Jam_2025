@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Пельмени — возможность ставить под собой липкие ловушки-тесто (станит врагов, n сек)
-    public class DumplingAbility : FoodAttackBase
+    public class DumplingAbility : IAttack
     {
         public DumplingAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
         protected override float DamageMultiplier => 0.5f; // Низкий урон, основной эффект - стан

@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Драконий фрукт — таранящий щит с шипами
-    public class DragonFruitAbility : FoodAttackBase
+    public class DragonFruitAbility : IAttack
     {
         private bool _shieldActive = false;
         

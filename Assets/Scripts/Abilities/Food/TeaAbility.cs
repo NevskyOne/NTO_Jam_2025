@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Чай — DoT по площади (урон каждый ход m ходов; 2x на лёд)
-    public class TeaAbility : FoodAttackBase
+    public class TeaAbility : IAttack
     {
         public TeaAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
         protected override float DamageMultiplier => 1.0f;

@@ -1,32 +1,51 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
+using Zenject;
 
-public class DownAttackLogic : IDamageAttack
+public class DownAttackLogic : IAttack
 {
-    private readonly AttackDataSO _data;
-    private readonly Transform _owner;
-    private readonly List<IHittable> _hitObjects = new List<IHittable>();
-    private float _attackDurationTimer;
-
-    public DownAttackLogic(AttackDataSO data, Transform owner)
+    [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+    private MainAttackData Data => (MainAttackData)((IAttack)this).Data;
+    
+    private Transform _owner;
+    private readonly List<IHittable> _hitObjects = new();
+    private Player _player;
+    private PlayerInput _input;
+    private Coroutine _cooldownRoutine;
+    
+    [Inject]
+    private void Construct(Player player, PlayerInput input)
     {
-        _data = data;
-        _owner = owner;
+        _owner = player.transform;
+        _player = player;
+        _input = input;
+    }
+
+    public void Activate()
+    {
+        _input.actions[Data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
+    }
+
+    public void Deactivate()
+    {
+        _input.actions[Data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void PerformAttack(Vector2 direction)
     {
-        if (_owner == null) return;
+        if (_owner == null || _cooldownRoutine != null) return;
         _hitObjects.Clear();
 
         Vector2 dir = Vector2.down;
-        float radius = _data.AttackRadius * _data.DownAttackRadiusMultiplier;
-        float dmg = _data.DownAttackDamage;
+        float radius = Data.Radius;
+        int dmg = Data.BaseDamage;
 
         // Смещаем область атаки вниз от игрока
-        Vector2 attackCenter = (Vector2)_owner.position + Vector2.down * radius * _data.DownAttackDownOffset;
+        Vector2 attackCenter = (Vector2)_owner.position + Vector2.down * radius * Data.ForwardOffset;
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
 
         // Визуализация области атаки для тестирования (рисуем окружность через линии)
@@ -50,24 +69,13 @@ public class DownAttackLogic : IDamageAttack
             }
         }
 
-        Debug.Log($"DownAttack: dmg={dmg}, r={radius}");
-        _attackDurationTimer = _data.DownAttackCooldown;
+        _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
     }
 
-    public float GetDamage() => _data.DownAttackDamage;
-    public float GetAttackRadius() => _data.AttackRadius * _data.DownAttackRadiusMultiplier;
-
-    public float GetAttackDuration()
+    private IEnumerator CooldownRoutine()
     {
-        return _attackDurationTimer;
-    }
-
-    public void UpdateCooldown()
-    {
-        if (_attackDurationTimer > 0)
-        {
-            _attackDurationTimer -= Time.deltaTime;
-        }
+        yield return new WaitForSeconds(Data.AttackCooldown);
+        _cooldownRoutine = null;
     }
 
     private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)

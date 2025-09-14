@@ -6,7 +6,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Рататуй — выпускает 3 зентаки(ввиде лиан) по направлению к курсору (2x урон по жиру)
-    public class RatatouilleAbility : FoodAttackBase
+    public class RatatouilleAbility : IAttack
     {
         public RatatouilleAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
         protected override float DamageMultiplier => 1.1f;

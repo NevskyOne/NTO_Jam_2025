@@ -5,7 +5,7 @@ using Core.Interfaces;
 namespace Abilities.Food
 {
     // Ядовитая картошка — посылает волну картошки, которая отталкивает врагов и наносит урон + яд
-    public class PoisonPotatoAbility : FoodAttackBase
+    public class PoisonPotatoAbility : IAttack
     {
         public PoisonPotatoAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
         protected override float DamageMultiplier => 1.2f;
