@@ -9,6 +9,8 @@ public class PlayerMovementLogic : IMovable
     private bool _isGrounded;
     private int _jumpCount;
     private int _extraJumps;
+    private float _dashCooldownTimer;
+    private float _dashDurationTimer;
     
     public PlayerMovementLogic(MoveDataSO moveData, Rigidbody2D rigidbody)
     {
@@ -19,6 +21,18 @@ public class PlayerMovementLogic : IMovable
     public void Move(Vector2 direction, float deltaTime)
     {
         if (_rigidbody == null) return;
+        
+        // Обновляем таймер dash кулдауна
+        if (_dashCooldownTimer > 0)
+        {
+            _dashCooldownTimer -= deltaTime;
+        }
+        
+        // Обновляем таймер dash длительности
+        if (_dashDurationTimer > 0)
+        {
+            _dashDurationTimer -= deltaTime;
+        }
         
         Vector2 velocity = _rigidbody.linearVelocity;
         float targetSpeedX = direction.x * _moveData.MoveSpeed;
@@ -39,13 +53,35 @@ public class PlayerMovementLogic : IMovable
         _rigidbody.linearVelocity = new Vector2(_rigidbody.linearVelocity.x, _moveData.JumpForce);
     }
     
+    public bool TryJump()
+    {
+        if (_rigidbody == null) return false;
+        int maxJumps = _moveData.MaxJumpCount + _extraJumps;
+        if (!_isGrounded && _jumpCount >= maxJumps) return false;
+        
+        _jumpCount++;
+        _rigidbody.linearVelocity = new Vector2(_rigidbody.linearVelocity.x, _moveData.JumpForce);
+        return true;
+    }
     
     public void Dash(Vector2 direction)
     {
         if (_rigidbody == null) return;
+        if (_dashCooldownTimer > 0) return;
         if (direction == Vector2.zero) direction = Vector2.right;
-        float dashSpeed = Mathf.Min(_moveData.DashForce, 15f);
-        _rigidbody.linearVelocity = direction.normalized * dashSpeed;
+        
+        // Используем только данные из MoveDataSO
+        Vector2 dashVelocity = direction.normalized * _moveData.DashForce;
+        
+        // Сохраняем Y компонент скорости если падаем
+        if (_rigidbody.linearVelocity.y < 0)
+        {
+            dashVelocity.y = _rigidbody.linearVelocity.y * 0.5f;
+        }
+        
+        _rigidbody.linearVelocity = dashVelocity;
+        _dashCooldownTimer = _moveData.DashCooldown;
+        _dashDurationTimer = _moveData.DashDuration;
     }
     
     public void UpdateGrounded(bool isGrounded)
@@ -64,5 +100,10 @@ public class PlayerMovementLogic : IMovable
     public void SetExtraJumps(int extra)
     {
         _extraJumps = Mathf.Max(0, extra);
+    }
+    
+    public float GetDashDuration()
+    {
+        return _dashDurationTimer;
     }
 }

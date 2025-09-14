@@ -1,8 +1,8 @@
-
-public interface IEffect
+namespace Core.Interfaces
 {
-    public void ApplyEffect();
-    public void RemoveEffect();
+    public interface IEffect
+    {
+        void ApplyEffect();
+        void RemoveEffect();
+    }
 }
-
-

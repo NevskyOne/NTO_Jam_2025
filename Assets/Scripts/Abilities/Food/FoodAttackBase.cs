@@ -4,10 +4,11 @@ using Core.Interfaces;
 
 namespace Abilities.Food
 {
-    public abstract class FoodAttackBase : IAttack
+    public abstract class FoodAttackBase : IDamageAttack
     {
         protected readonly AttackDataSO Data;
         protected readonly Transform Owner;
+        protected float _attackDurationTimer;
 
         protected FoodAttackBase(AttackDataSO data, Transform owner)
         {
@@ -25,13 +26,24 @@ namespace Abilities.Food
             float dmg = GetDamage();
             foreach (var col in hits)
             {
+                if (col.transform == Owner) continue; // Исключаем владельца
                 var h = col.GetComponent<IHittable>();
                 if (h != null) h.TakeDamage(dmg);
             }
             Debug.Log($"{GetType().Name} used: dmg={dmg}, r={Data.AttackRadius}");
+            _attackDurationTimer = Data.AttackCooldown;
         }
 
         public virtual float GetDamage() => Data.BaseDamage * DamageMultiplier;
         public float GetAttackRadius() => Data.AttackRadius;
+
+        public virtual float GetAttackDuration()
+        {
+            if (_attackDurationTimer > 0)
+            {
+                _attackDurationTimer -= Time.deltaTime;
+            }
+            return _attackDurationTimer;
+        }
     }
 }

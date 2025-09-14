@@ -12,16 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bb89e9e39a593142bfd587b0d086bca, type: 3}
   m_Name: MoveData
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.MoveDataSO
-  moveSpeed: 5
-  maxMoveSpeed: 8
-  acceleration: 50
-  deceleration: 25
-  jumpForce: 8
-  maxJumpHeight: 3
-  jumpTimeThreshold: 0.25
-  fallMultiplier: 2.5
-  dashForce: 20
-  dashDuration: 0.25
-  dashCooldown: 0.5
-  airControlMultiplier: 0.7
-  maxJumpCount: 1
+  _moveSpeed: 5
+  _maxMoveSpeed: 8
+  _acceleration: 50
+  _deceleration: 25
+  _jumpForce: 10
+  _maxJumpHeight: 3
+  _jumpTimeThreshold: 0.25
+  _fallMultiplier: 2.5
+  _dashForce: 20
+  _dashDuration: 0.5
+  _dashCooldown: 1
+  _airControlMultiplier: 0.7
+  _maxJumpCount: 1
