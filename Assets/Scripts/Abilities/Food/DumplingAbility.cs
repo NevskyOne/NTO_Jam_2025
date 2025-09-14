@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
@@ -7,6 +8,7 @@ using Zenject;
 
 namespace Abilities.Food
 {
+    [Serializable]
     public class DumplingAbility : IAttack
     {
         [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }

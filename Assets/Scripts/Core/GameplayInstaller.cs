@@ -20,7 +20,7 @@ public class GameplayInstaller : MonoInstaller
         Container.Bind<AttackDataSO>().FromInstance(attackDataSO).AsSingle();
         Container.Bind<MoveDataSO>().FromInstance(moveDataSO).AsSingle();
 
-        Container.Bind<Player>().FromComponentInNewPrefab(playerPrefab).AsSingle();
+        Container.Bind<Player>().FromInstance(playerPrefab).AsSingle();
         
         Container.Bind<Camera>().FromInstance(camera).AsSingle();
         Container.Bind<DialogueStartSystem>().FromInstance(dialogueStartSystem).AsSingle();

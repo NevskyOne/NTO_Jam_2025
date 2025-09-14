@@ -15,7 +15,10 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     [SerializeField] private Collider2D _collider;
     [SerializeField] private GroundChecker _groundChecker;
     [SerializeField] private Transform _dialogueBubblePos;
-    
+    [SerializeField] private Transform _cameraTarget;
+
+    public Transform CameraTarget => _cameraTarget;
+
     // Данные игрока
     private PlayerDataSO _playerData;
     private MoveDataSO _moveData;

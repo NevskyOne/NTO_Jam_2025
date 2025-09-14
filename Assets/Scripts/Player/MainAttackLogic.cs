@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using Zenject;
 
+[Serializable]
 public class MainAttackLogic : IAttack
 {
     [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }

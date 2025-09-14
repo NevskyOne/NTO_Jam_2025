@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
@@ -5,6 +6,7 @@ using Core.Interfaces;
 using UnityEngine.InputSystem;
 using Zenject;
 
+[Serializable]
 public class ParryAttackLogic : IAttack
 {
     [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }

@@ -26,6 +26,7 @@ public class PlayerMovementLogic : IMovable
         if (_input != null)
         {
             _input.actions["Move"].performed += ctx => Move(new Vector2(ctx.ReadValue<float>(), 0));
+            _input.actions["Move"].canceled += _ => _player.CameraTarget.localPosition = new Vector3(0,1,0);
             _input.actions["Jump"].performed += _ => Jump();
             _input.actions["Shift"].performed += _ => Dash(LastDirection);
         }
@@ -49,6 +50,10 @@ public class PlayerMovementLogic : IMovable
         }
 
         LastDirection = direction;
+        
+        if( direction.x > 0) _player.CameraTarget.localPosition = new Vector3(0.5f,1,0);
+        else if( direction.x < 0) _player.CameraTarget.localPosition = new Vector3(-0.5f,1,0);
+        
         // Обновляем таймер dash кулдауна
         if (_dashCooldownTimer > 0)
         {
