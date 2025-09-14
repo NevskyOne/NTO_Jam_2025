@@ -41,16 +41,22 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public PlayerMovementLogic Movement => (PlayerMovementLogic)_movement;
 
     [Inject]
-    private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input)
+    private void Construct(PlayerDataSO playerData, MoveDataSO moveData)
     {
         _playerData = playerData;
         _moveData = moveData;
-        _playerInput = input;
     }
 
     private void Awake()
     {
+        _playerInput = GetComponent<PlayerInput>();
+        if (_playerInput == null)
+        {
+            Debug.LogError("Player: Unity PlayerInput component is missing. Please add PlayerInput to the Player GameObject.");
+        }
         _movement = new PlayerMovementLogic(_moveData, _rigidbody);
+        // Подключаем события ввода к логике движения без DI
+        Movement.Initialize(this, _playerInput);
         _mainAttackSet = _playerData.AttackSet;
 
         // Отладка данных
@@ -62,20 +68,34 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     {
         if (_groundChecker != null)
             _groundChecker.GroundStateChanged += OnGroundChanged;
-
-        _playerInput.actions["1"].performed += _ => UseFood(0);
-        _playerInput.actions["2"].performed += _ => UseFood(1);
-        _playerInput.actions["3"].performed += _ => UseFood(2);
+        if (_playerInput != null)
+        {
+            _playerInput.actions["1"].performed += _ => UseFood(0);
+            _playerInput.actions["2"].performed += _ => UseFood(1);
+            _playerInput.actions["3"].performed += _ => UseFood(2);
+        }
     }
 
     private void OnDisable()
     {
         if (_groundChecker != null)
             _groundChecker.GroundStateChanged -= OnGroundChanged;
-        
-        _playerInput.actions["1"].performed -= _ => UseFood(0);
-        _playerInput.actions["2"].performed -= _ => UseFood(1);
-        _playerInput.actions["3"].performed -= _ => UseFood(2);
+        if (_playerInput != null)
+        {
+            _playerInput.actions["1"].performed -= _ => UseFood(0);
+            _playerInput.actions["2"].performed -= _ => UseFood(1);
+            _playerInput.actions["3"].performed -= _ => UseFood(2);
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (_playerInput == null) return;
+        float x = 0f;
+        var moveAction = _playerInput.actions["Move"];
+        if (moveAction != null)
+            x = moveAction.ReadValue<float>(); // 1D Axis (A/D)
+        Movement.Move(new Vector2(x, 0f));
     }
 
     private void OnGroundChanged(bool grounded)

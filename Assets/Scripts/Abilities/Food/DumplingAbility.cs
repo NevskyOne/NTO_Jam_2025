@@ -1,73 +1,100 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Пельмени — возможность ставить под собой липкие ловушки-тесто (станит врагов, n сек)
     public class DumplingAbility : IAttack
     {
-        public DumplingAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 0.5f; // Низкий урон, основной эффект - стан
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
 
-        public override void PerformAttack(Vector2 direction)
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
         {
-            if (Owner == null) return;
-            
-            // Ставим липкую ловушку под игроком
-            Vector2 trapPosition = Owner.position;
-            
-            // Проверяем врагов в радиусе ловушки
-            Collider2D[] hits = Physics2D.OverlapCircleAll(trapPosition, Data.AttackRadius);
-            
-            foreach (var col in hits)
-            {
-                if (col.transform == Owner) continue;
-                
-                var hittable = col.GetComponent<IHittable>();
-                if (hittable != null)
-                {
-                    // Наносим урон и применяем стан
-                    hittable.TakeDamage(GetDamage());
-                    
-                    // Останавливаем врага
-                    var rb = col.GetComponent<Rigidbody2D>();
-                    if (rb != null)
-                    {
-                        rb.linearVelocity = Vector2.zero;
-                    }
-                    
-                    Debug.Log($"Dumpling trap caught {col.name} - damage + stun");
-                }
-            }
-            
-            // Визуализация ловушки
-            DrawTrapEffect(trapPosition, Data.AttackRadius);
-            
-            Debug.Log($"Dumpling: sticky trap placed at {trapPosition}");
-            _attackDurationTimer = Data.AttackCooldown;
+            _owner = player.transform;
+            _player = player;
+            _input = input;
         }
 
-        private void DrawTrapEffect(Vector2 center, float radius)
+        public void Activate()
         {
-            // Рисуем липкую ловушку
-            int segments = 12;
-            float angle = 2 * Mathf.PI / segments;
-            
-            for (int i = 0; i < segments; i++)
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
             {
-                float currentAngle = i * angle;
-                float nextAngle = (i + 1) * angle;
-                
-                Vector2 currentPoint = center + new Vector2(Mathf.Cos(currentAngle), Mathf.Sin(currentAngle)) * radius;
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radius;
-                
-                Debug.DrawLine(currentPoint, nextPoint, Color.yellow, 0.3f);
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
             }
-            
-            // Крест в центре
-            Debug.DrawLine(center + Vector2.left * radius * 0.5f, center + Vector2.right * radius * 0.5f, Color.yellow, 0.3f);
-            Debug.DrawLine(center + Vector2.up * radius * 0.5f, center + Vector2.down * radius * 0.5f, Color.yellow, 0.3f);
+        }
+
+        public void Deactivate()
+        {
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
+        }
+
+        private void OnPerformed(InputAction.CallbackContext _)
+        {
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
+
+        public void PerformAttack(Vector2 direction)
+        {
+            if (_owner == null || _cooldownRoutine != null) return;
+
+            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
+            float radius = Data.Radius;
+            var hits = Physics2D.OverlapCircleAll(center, radius);
+
+            foreach (var col in hits)
+            {
+                if (col.transform == _owner) continue;
+                var h = col.GetComponent<IHittable>();
+                if (h != null)
+                {
+                    h.TakeDamage(Data.BaseDamage);
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(col.gameObject);
+                }
+            }
+
+            DrawDebugCircle(center, radius, Color.yellow, 0.4f);
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
+        }
+
+        private IEnumerator CooldownRoutine()
+        {
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
+            }
         }
     }
 }

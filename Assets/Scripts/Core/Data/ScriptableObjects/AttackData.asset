@@ -12,10 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c16cfde69dc1fd41ab6f3afd221ba19, type: 3}
   m_Name: AttackData
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.AttackDataSO
-  baseDamage: 10
-  damageMultiplier: 1
-  attackRadius: 1
-  attackCooldown: 0.5
-  attackDuration: 0.3
-  knockbackForce: 5
-  stunDuration: 0
+  <InputBinding>k__BackingField: 
+  <BaseDamage>k__BackingField: 0
