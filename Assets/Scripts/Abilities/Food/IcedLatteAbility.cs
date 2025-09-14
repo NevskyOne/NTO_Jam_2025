@@ -1,19 +1,62 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Айс латте — выпускает ледяные осколки в врагов в направлении курсора по клику, накладывает медлительность на врагов в течение n секунд (2x на огонь)
     public class IcedLatteAbility : IAttack
     {
-        public IcedLatteAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 0.8f;
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
 
-        public override void PerformAttack(Vector2 direction)
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
         {
-            if (Owner == null) return;
-            
+            _owner = player.transform;
+            _player = player;
+            _input = input;
+        }
+
+        public void Activate()
+        {
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
+            }
+        }
+
+        public void Deactivate()
+        {
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
+        }
+
+        private void OnPerformed(InputAction.CallbackContext _)
+        {
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
+
+        public void PerformAttack(Vector2 direction)
+        {
+            if (_owner == null || _cooldownRoutine != null) return;
+
             // Выпускаем 3 ледяных осколка в направлении
             for (int i = 0; i < 3; i++)
             {
@@ -21,35 +64,35 @@ namespace Abilities.Food
                 Vector2 shardDirection = RotateVector(direction.normalized, angle);
                 FireIceShard(shardDirection);
             }
-            
-            Debug.Log($"IcedLatte: fired 3 ice shards in direction {direction}");
-            _attackDurationTimer = Data.AttackCooldown;
+
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
         }
 
         private void FireIceShard(Vector2 direction)
         {
             // Проверяем попадание по линии
-            RaycastHit2D hit = Physics2D.Raycast(Owner.position, direction, Data.AttackRadius * 2f);
-            
-            if (hit.collider != null && hit.collider.transform != Owner)
+            RaycastHit2D hit = Physics2D.Raycast(_owner.position, direction, Data.Radius * 2f);
+
+            if (hit.collider != null && hit.collider.transform != _owner)
             {
                 var hittable = hit.collider.GetComponent<IHittable>();
                 if (hittable != null)
                 {
-                    float damage = GetDamage();
+                    int damage = Data.BaseDamage;
                     // 2x урон против огня
                     if (hit.collider.name.Contains("Fire") || hit.collider.name.Contains("Flame"))
                     {
-                        damage *= 2f;
+                        damage *= 2;
                     }
-                    
+
                     hittable.TakeDamage(damage);
-                    Debug.Log($"Ice shard hit {hit.collider.name} for {damage} damage + slow");
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(hit.collider.gameObject);
                 }
             }
-            
+
             // Визуализация осколка
-            Debug.DrawRay(Owner.position, direction * Data.AttackRadius * 2f, Color.cyan, 0.5f);
+            DrawDebugRay(_owner.position, direction * Data.Radius * 2f, Color.cyan, 0.4f);
         }
 
         private Vector2 RotateVector(Vector2 vector, float angleDegrees)
@@ -61,6 +104,31 @@ namespace Abilities.Food
                 vector.x * cos - vector.y * sin,
                 vector.x * sin + vector.y * cos
             );
+        }
+
+        private IEnumerator CooldownRoutine()
+        {
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
+        }
+
+        private void DrawDebugRay(Vector2 start, Vector2 end, Color color, float duration)
+        {
+            Debug.DrawLine(start, end, color, duration);
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
+            }
         }
     }
 }

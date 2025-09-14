@@ -1,120 +1,99 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Корейская морковка — дает дабл-джамп + урон при падении
     public class KoreanCarrotAbility : IAttack
     {
-        private bool _extraJumpUsed = false;
-        private bool _wasFalling = false;
-        private float _fallStartHeight = 0f;
-        
-        public KoreanCarrotAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 1.0f;
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
 
-        public override void PerformAttack(Vector2 direction)
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
         {
-            if (Owner == null) return;
-            
-            var rb = Owner.GetComponent<Rigidbody2D>();
-            if (rb == null) return;
-            
-            // Даем дополнительный прыжок
-            if (!_extraJumpUsed && rb.linearVelocity.y <= 0)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 10f); // Сила прыжка
-                _extraJumpUsed = true;
-                Debug.Log("Korean Carrot: extra jump used");
-            }
-            
-            _attackDurationTimer = Data.AttackCooldown;
+            _owner = player.transform;
+            _player = player;
+            _input = input;
         }
 
-        public void Update()
+        public void Activate()
         {
-            if (Owner == null) return;
-            
-            var rb = Owner.GetComponent<Rigidbody2D>();
-            if (rb == null) return;
-            
-            // Отслеживаем падение
-            if (rb.linearVelocity.y < -2f && !_wasFalling)
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
             {
-                _wasFalling = true;
-                _fallStartHeight = Owner.position.y;
-            }
-            
-            // Проверяем приземление
-            if (_wasFalling && rb.linearVelocity.y >= 0)
-            {
-                float fallDistance = _fallStartHeight - Owner.position.y;
-                if (fallDistance > 2f) // Минимальная высота падения
-                {
-                    PerformLandingAttack(fallDistance);
-                }
-                
-                _wasFalling = false;
-                _extraJumpUsed = false; // Сброс дополнительного прыжка при приземлении
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
             }
         }
 
-        private void PerformLandingAttack(float fallDistance)
+        public void Deactivate()
         {
-            float landingRadius = Data.AttackRadius * 1.2f;
-            float bonusDamage = fallDistance * 0.5f; // Бонус урон от высоты падения
-            
-            Collider2D[] hits = Physics2D.OverlapCircleAll(Owner.position, landingRadius);
-            
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
+        }
+
+        private void OnPerformed(InputAction.CallbackContext _)
+        {
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
+
+        public void PerformAttack(Vector2 direction)
+        {
+            if (_owner == null || _cooldownRoutine != null) return;
+
+            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
+            float radius = Data.Radius;
+            var hits = Physics2D.OverlapCircleAll(center, radius);
+
             foreach (var col in hits)
             {
-                if (col.transform == Owner) continue;
-                
-                var hittable = col.GetComponent<IHittable>();
-                if (hittable != null)
+                if (col.transform == _owner) continue;
+                var h = col.GetComponent<IHittable>();
+                if (h != null)
                 {
-                    float totalDamage = GetDamage() + bonusDamage;
-                    hittable.TakeDamage(totalDamage);
-                    
-                    // Оглушаем врага
-                    var rb = col.GetComponent<Rigidbody2D>();
-                    if (rb != null)
-                    {
-                        rb.linearVelocity = Vector2.zero;
-                    }
-                    
-                    Debug.Log($"Korean Carrot landing hit {col.name} for {totalDamage} damage + stun");
+                    h.TakeDamage(Data.BaseDamage);
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(col.gameObject);
                 }
             }
-            
-            // Визуализация удара при приземлении
-            DrawLandingEffect(Owner.position, landingRadius);
+
+            DrawDebugCircle(center, radius, Color.yellow, 0.4f);
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
         }
 
-        private void DrawLandingEffect(Vector2 center, float radius)
+        private IEnumerator CooldownRoutine()
         {
-            // Рисуем эффект удара при приземлении
-            int rays = 8;
-            for (int i = 0; i < rays; i++)
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
             {
-                float angle = (2 * Mathf.PI / rays) * i;
-                Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                Debug.DrawRay(center, direction * radius, Color.orange, 1f);
-            }
-            
-            // Круг удара
-            int segments = 16;
-            float segmentAngle = 2 * Mathf.PI / segments;
-            for (int i = 0; i < segments; i++)
-            {
-                float currentAngle = i * segmentAngle;
-                float nextAngle = (i + 1) * segmentAngle;
-                
-                Vector2 currentPoint = center + new Vector2(Mathf.Cos(currentAngle), Mathf.Sin(currentAngle)) * radius;
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radius;
-                
-                Debug.DrawLine(currentPoint, nextPoint, Color.red, 1f);
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
             }
         }
     }

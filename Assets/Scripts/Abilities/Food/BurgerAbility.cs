@@ -1,65 +1,100 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Бургер — накладывает на врагов "жирность" (ускоряет врага, но наносит DoT)
     public class BurgerAbility : IAttack
     {
-        AttackDataSO IAttack.Data { get; set; }
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
+
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
+        {
+            _owner = player.transform;
+            _player = player;
+            _input = input;
+        }
+
+        public void Activate()
+        {
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
+            }
+        }
+
+        public void Deactivate()
+        {
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
+        }
+
+        private void OnPerformed(InputAction.CallbackContext _)
+        {
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
 
         public void PerformAttack(Vector2 direction)
         {
-            if (Owner == null) return;
-            
-            Vector2 attackPoint = (Vector2)Owner.position + direction.normalized * Data.AttackRadius * 0.5f;
-            Collider2D[] hits = Physics2D.OverlapCircleAll(attackPoint, Data.AttackRadius);
-            
+            if (_owner == null || _cooldownRoutine != null) return;
+
+            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
+            float radius = Data.Radius;
+            var hits = Physics2D.OverlapCircleAll(center, radius);
+
             foreach (var col in hits)
             {
-                if (col.transform == Owner) continue;
-                
-                var hittable = col.GetComponent<IHittable>();
-                if (hittable != null)
+                if (col.transform == _owner) continue;
+                var h = col.GetComponent<IHittable>();
+                if (h != null)
                 {
-                    // Наносим урон
-                    hittable.TakeDamage(GetDamage());
-                    
-                    // Применяем эффект жирности
-                    ApplyGreaseEffect(col.gameObject);
-                    
-                    Debug.Log($"Burger hit {col.name} for {GetDamage()} damage + grease effect");
+                    h.TakeDamage(Data.BaseDamage);
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(col.gameObject);
                 }
             }
-            
-            Debug.Log($"Burger attack used at {attackPoint}");
-            _attackDurationTimer = Data.AttackCooldown;
+
+            DrawDebugCircle(center, radius, Color.magenta, 0.4f);
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
         }
 
-        public void ApplyGreaseEffect(GameObject target)
+        private IEnumerator CooldownRoutine()
         {
-            // Добавляем тег жирности для других способностей
-            if (!target.CompareTag("Greasy"))
-            {
-                target.tag = "Greasy";
-            }
-            
-            // Ускоряем врага
-            var rb = target.GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.AddForce(rb.linearVelocity.normalized * 3f, ForceMode2D.Impulse);
-            }
-            
-            Debug.Log($"Grease effect applied to {target.name} - speed boost + DoT tag");
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
         }
-        
-        // Дополнительный метод для парирования
-        public void ApplyGreasinessOnParry(GameObject target)
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
         {
-            ApplyGreaseEffect(target);
-            Debug.Log($"Burger parry effect: greasiness applied to {target.name}");
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
+            }
         }
     }
 }

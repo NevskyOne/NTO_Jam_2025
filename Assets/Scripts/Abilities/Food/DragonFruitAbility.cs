@@ -1,83 +1,99 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Драконий фрукт — таранящий щит с шипами
     public class DragonFruitAbility : IAttack
     {
-        private bool _shieldActive = false;
-        
-        public DragonFruitAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 1.5f;
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
 
-        public override void PerformAttack(Vector2 direction)
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
         {
-            if (Owner == null || _shieldActive) return;
-            
-            _shieldActive = true;
-            
-            // Создаем защитный щит вокруг игрока
-            Vector2 shieldCenter = Owner.position;
-            float shieldRadius = Data.AttackRadius * 1.2f;
-            
-            // Проверяем врагов в радиусе щита
-            Collider2D[] hits = Physics2D.OverlapCircleAll(shieldCenter, shieldRadius);
-            
-            foreach (var col in hits)
-            {
-                if (col.transform == Owner) continue;
-                
-                var hittable = col.GetComponent<IHittable>();
-                if (hittable != null)
-                {
-                    // Наносим урон шипами щита
-                    hittable.TakeDamage(GetDamage());
-                    
-                    // Отталкиваем врага от игрока
-                    Vector2 knockbackDirection = (col.transform.position - Owner.position).normalized;
-                    var rb = col.GetComponent<Rigidbody2D>();
-                    if (rb != null)
-                    {
-                        rb.AddForce(knockbackDirection * 10f, ForceMode2D.Impulse);
-                    }
-                    
-                    Debug.Log($"Dragon Fruit shield hit {col.name} for {GetDamage()} damage + knockback");
-                }
-            }
-            
-            // Визуализация щита
-            DrawShieldEffect(shieldCenter, shieldRadius);
-            
-            Debug.Log($"Dragon Fruit: shield activated with radius {shieldRadius}");
-            _attackDurationTimer = Data.AttackCooldown;
-            _shieldActive = false;
+            _owner = player.transform;
+            _player = player;
+            _input = input;
         }
 
-        private void DrawShieldEffect(Vector2 center, float radius)
+        public void Activate()
         {
-            // Рисуем щит с шипами
-            int segments = 16;
-            float angle = 2 * Mathf.PI / segments;
-            
-            for (int i = 0; i < segments; i++)
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
             {
-                float currentAngle = i * angle;
-                float nextAngle = (i + 1) * angle;
-                
-                Vector2 currentPoint = center + new Vector2(Mathf.Cos(currentAngle), Mathf.Sin(currentAngle)) * radius;
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radius;
-                
-                // Основной щит
-                Debug.DrawLine(currentPoint, nextPoint, Color.red, 2f);
-                
-                // Шипы
-                if (i % 2 == 0)
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
+            }
+        }
+
+        public void Deactivate()
+        {
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
+        }
+
+        private void OnPerformed(InputAction.CallbackContext _)
+        {
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
+
+        public void PerformAttack(Vector2 direction)
+        {
+            if (_owner == null || _cooldownRoutine != null) return;
+
+            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
+            float radius = Data.Radius;
+            var hits = Physics2D.OverlapCircleAll(center, radius);
+
+            foreach (var col in hits)
+            {
+                if (col.transform == _owner) continue;
+                var h = col.GetComponent<IHittable>();
+                if (h != null)
                 {
-                    Vector2 spikeEnd = center + new Vector2(Mathf.Cos(currentAngle), Mathf.Sin(currentAngle)) * (radius + 0.3f);
-                    Debug.DrawLine(currentPoint, spikeEnd, Color.darkRed, 2f);
+                    h.TakeDamage(Data.BaseDamage);
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(col.gameObject);
                 }
+            }
+
+            DrawDebugCircle(center, radius, Color.red, 0.5f);
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
+        }
+
+        private IEnumerator CooldownRoutine()
+        {
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
             }
         }
     }

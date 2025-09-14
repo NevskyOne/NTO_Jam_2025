@@ -1,106 +1,99 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Ядовитая картошка — посылает волну картошки, которая отталкивает врагов и наносит урон + яд
     public class PoisonPotatoAbility : IAttack
     {
-        public PoisonPotatoAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 1.2f;
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
 
-        public override void PerformAttack(Vector2 direction)
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
         {
-            if (Owner == null) return;
-            if (direction == Vector2.zero) direction = Vector2.right;
-            
-            direction = direction.normalized;
-            
-            // Создаем волну картошки в направлении
-            CreatePotatoWave(direction);
-            
-            Debug.Log($"Poison Potato: wave sent in direction {direction}");
-            _attackDurationTimer = Data.AttackCooldown;
+            _owner = player.transform;
+            _player = player;
+            _input = input;
         }
 
-        private void CreatePotatoWave(Vector2 direction)
+        public void Activate()
         {
-            Vector2 startPos = Owner.position;
-            float waveLength = Data.AttackRadius * 2f;
-            int segments = 5; // 5 сегментов волны
-            
-            for (int i = 1; i <= segments; i++)
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
             {
-                Vector2 segmentPos = startPos + direction * (waveLength / segments * i);
-                float segmentRadius = Data.AttackRadius * 0.8f;
-                
-                // Проверяем врагов в каждом сегменте
-                Collider2D[] hits = Physics2D.OverlapCircleAll(segmentPos, segmentRadius);
-                
-                foreach (var col in hits)
-                {
-                    if (col.transform == Owner) continue;
-                    
-                    var hittable = col.GetComponent<IHittable>();
-                    if (hittable != null)
-                    {
-                        float damage = GetDamage();
-                        
-                        // Бонус урон против врагов с эффектами
-                        if (HasStatusEffects(col.gameObject))
-                        {
-                            damage *= 1.2f;
-                        }
-                        
-                        hittable.TakeDamage(damage);
-                        
-                        // Отталкиваем врага
-                        var rb = col.GetComponent<Rigidbody2D>();
-                        if (rb != null)
-                        {
-                            rb.AddForce(direction * 8f, ForceMode2D.Impulse);
-                        }
-                        
-                        // Добавляем тег яда
-                        if (!col.CompareTag("Poisoned"))
-                        {
-                            col.tag = "Poisoned";
-                        }
-                        
-                        Debug.Log($"Poison wave hit {col.name} for {damage} damage + poison + knockback");
-                    }
-                }
-                
-                // Визуализация сегмента волны
-                DrawWaveSegment(segmentPos, segmentRadius, i);
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
             }
         }
 
-        private bool HasStatusEffects(GameObject target)
+        public void Deactivate()
         {
-            return target.CompareTag("Poisoned") || 
-                   target.CompareTag("Greasy") || 
-                   target.CompareTag("Stunned") ||
-                   target.name.Contains("Effect");
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
         }
 
-        private void DrawWaveSegment(Vector2 center, float radius, int segmentIndex)
+        private void OnPerformed(InputAction.CallbackContext _)
         {
-            Color waveColor = Color.Lerp(Color.green, Color.yellow, segmentIndex / 5f);
-            
-            int points = 12;
-            float angle = 2 * Mathf.PI / points;
-            
-            for (int i = 0; i < points; i++)
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
+
+        public void PerformAttack(Vector2 direction)
+        {
+            if (_owner == null || _cooldownRoutine != null) return;
+
+            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
+            float radius = Data.Radius;
+            var hits = Physics2D.OverlapCircleAll(center, radius);
+
+            foreach (var col in hits)
             {
-                float currentAngle = i * angle;
-                float nextAngle = (i + 1) * angle;
-                
-                Vector2 currentPoint = center + new Vector2(Mathf.Cos(currentAngle), Mathf.Sin(currentAngle)) * radius;
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radius;
-                
-                Debug.DrawLine(currentPoint, nextPoint, waveColor, 0.8f);
+                if (col.transform == _owner) continue;
+                var h = col.GetComponent<IHittable>();
+                if (h != null)
+                {
+                    h.TakeDamage(Data.BaseDamage);
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(col.gameObject);
+                }
+            }
+
+            DrawDebugCircle(center, radius, Color.green, 0.4f);
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
+        }
+
+        private IEnumerator CooldownRoutine()
+        {
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
             }
         }
     }

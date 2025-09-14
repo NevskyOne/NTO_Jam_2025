@@ -1,90 +1,99 @@
+using System.Collections;
 using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Abilities.Food
 {
-    // Взрывная карамель — ставит бомбу, которая взрывается через n секунд
     public class ExplosiveCaramelAbility : IAttack
     {
-        public ExplosiveCaramelAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
-        protected override float DamageMultiplier => 1.3f;
+        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
+        private FoodData Data => (FoodData)((IAttack)this).Data;
 
-        public override void PerformAttack(Vector2 direction)
+        private Transform _owner;
+        private Player _player;
+        private PlayerInput _input;
+        private Coroutine _cooldownRoutine;
+
+        [Inject]
+        private void Construct(Player player, PlayerInput input)
         {
-            if (Owner == null) return;
-            
-            // Размещаем бомбу в направлении атаки
-            Vector2 bombPosition = (Vector2)Owner.position + direction.normalized * Data.AttackRadius * 0.7f;
-            
-            // Немедленный взрыв для упрощения
-            ExplodeBomb(bombPosition);
-            
-            Debug.Log($"Explosive Caramel: bomb placed and exploded at {bombPosition}");
-            _attackDurationTimer = Data.AttackCooldown;
+            _owner = player.transform;
+            _player = player;
+            _input = input;
         }
 
-        private void ExplodeBomb(Vector2 position)
+        public void Activate()
         {
-            float explosionRadius = Data.AttackRadius * 1.5f;
-            
-            // Находим всех врагов в радиусе взрыва
-            Collider2D[] hits = Physics2D.OverlapCircleAll(position, explosionRadius);
-            
+            if (_input == null) return;
+            _input.actions[Data.InputBinding].performed += OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.AddEffect(eff);
+            }
+        }
+
+        public void Deactivate()
+        {
+            if (_input != null)
+                _input.actions[Data.InputBinding].performed -= OnPerformed;
+            if (_player != null)
+            {
+                foreach (var eff in Data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
+            }
+        }
+
+        private void OnPerformed(InputAction.CallbackContext _)
+        {
+            var dir = _player != null ? _player.Movement.LastDirection : Vector2.right;
+            PerformAttack(dir);
+        }
+
+        public void PerformAttack(Vector2 direction)
+        {
+            if (_owner == null || _cooldownRoutine != null) return;
+
+            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
+            float radius = Data.Radius;
+            var hits = Physics2D.OverlapCircleAll(center, radius);
+
             foreach (var col in hits)
             {
-                if (col.transform == Owner) continue;
-                
-                var hittable = col.GetComponent<IHittable>();
-                if (hittable != null)
+                if (col.transform == _owner) continue;
+                var h = col.GetComponent<IHittable>();
+                if (h != null)
                 {
-                    // Рассчитываем урон в зависимости от расстояния
-                    float distance = Vector2.Distance(position, col.transform.position);
-                    float damageMultiplier = 1f - (distance / explosionRadius) * 0.5f; // От 100% до 50% урона
-                    float damage = GetDamage() * damageMultiplier;
-                    
-                    hittable.TakeDamage(damage);
-                    
-                    // Отбрасываем врага от центра взрыва
-                    Vector2 knockbackDirection = (col.transform.position - (Vector3)position).normalized;
-                    var rb = col.GetComponent<Rigidbody2D>();
-                    if (rb != null)
-                    {
-                        float knockbackForce = 15f * damageMultiplier;
-                        rb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
-                    }
-                    
-                    Debug.Log($"Explosion hit {col.name} for {damage} damage + knockback");
+                    h.TakeDamage(Data.BaseDamage);
+                    foreach (var eff in Data.ApplyOnTargets)
+                        eff.ApplyEffect(col.gameObject);
                 }
             }
-            
-            // Визуализация взрыва
-            DrawExplosionEffect(position, explosionRadius);
+
+            DrawDebugCircle(center, radius, Color.red, 0.4f);
+            _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
         }
 
-        private void DrawExplosionEffect(Vector2 center, float radius)
+        private IEnumerator CooldownRoutine()
         {
-            // Рисуем взрыв
-            int rays = 16;
-            for (int i = 0; i < rays; i++)
+            yield return new WaitForSeconds(Data.AttackCooldown);
+            _cooldownRoutine = null;
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
             {
-                float angle = (2 * Mathf.PI / rays) * i;
-                Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                Debug.DrawRay(center, direction * radius, Color.red, 1f);
-            }
-            
-            // Круги взрыва
-            int segments = 20;
-            float segmentAngle = 2 * Mathf.PI / segments;
-            for (int i = 0; i < segments; i++)
-            {
-                float currentAngle = i * segmentAngle;
-                float nextAngle = (i + 1) * segmentAngle;
-                
-                Vector2 currentPoint = center + new Vector2(Mathf.Cos(currentAngle), Mathf.Sin(currentAngle)) * radius;
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radius;
-                
-                Debug.DrawLine(currentPoint, nextPoint, Color.orange, 1f);
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
             }
         }
     }
