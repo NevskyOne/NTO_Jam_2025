@@ -12,21 +12,25 @@ public class ParryAttackLogic : IAttack
     
     private Transform _owner;
     private Player _player;
+    private PlayerInput _input;
     private Coroutine _cooldownRoutine;
-    
+
     [Inject]
-    private void Construct(Player player)
+    private void Construct(Player player, PlayerInput input)
     {
         _owner = player.transform;
         _player = player;
+        _input = input;
     }
 
     public void Activate()
     {
+        _input.actions[Data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void Deactivate()
     {
+        _input.actions[Data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void PerformAttack(Vector2 direction)

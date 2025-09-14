@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 
 
 [RequireComponent(typeof(PlayerInput))]
-public class Player : MonoBehaviour, IHittable, IHealable
+public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 {
     [Header("Компоненты")]
     [SerializeField] private Rigidbody2D _rigidbody;
@@ -23,15 +23,14 @@ public class Player : MonoBehaviour, IHittable, IHealable
     // Input через Unity PlayerInput component
     private PlayerInput _playerInput;
     private IMovable _movement;
-    private Vector2 _cachedMove;
 
     // Состояния
     public enum PlayerState { Idle, Moving, Jumping, Dashing, Attacking, Parrying }
     private PlayerState _state = PlayerState.Idle;
     
-    private readonly List<IAttack> _mainAttackSet = new();
+    private List<IAttack> _mainAttackSet = new();
     private readonly List<IAttack> _abilitiesSet = new();
-    private readonly List<IEffect> _activeEffects = new();
+    private readonly List<EffectBase> _activeEffects = new();
 
     private Coroutine _foodDeactivationRoutine;
     
@@ -51,19 +50,11 @@ public class Player : MonoBehaviour, IHittable, IHealable
 
     private void Awake()
     {
-        if (_rigidbody == null) _rigidbody = GetComponent<Rigidbody2D>();
-        if (_collider == null) _collider = GetComponent<Collider2D>();
-        if (_groundChecker == null) _groundChecker = GetComponentInChildren<GroundChecker>();
-        _playerInput = GetComponent<PlayerInput>();
-
         _movement = new PlayerMovementLogic(_moveData, _rigidbody);
+        _mainAttackSet = _playerData.AttackSet;
 
         // Отладка данных
         Debug.Log($"MoveData: speed={_moveData.MoveSpeed}, accel={_moveData.Acceleration}, jumpForce={_moveData.JumpForce}");
-        
-        _mainAttackSet.Add(new MainAttackLogic());
-        _mainAttackSet.Add(new DownAttackLogic());
-        _mainAttackSet.Add(new ParryAttackLogic());
         
     }
 
@@ -120,8 +111,6 @@ public class Player : MonoBehaviour, IHittable, IHealable
         {
             _foodDeactivationRoutine = StartCoroutine(FoodDeactivationRoutine(_abilitiesSet[slot]));
         }
-
-        
     }
 
     private IEnumerator FoodDeactivationRoutine(IAttack data)
@@ -138,21 +127,21 @@ public class Player : MonoBehaviour, IHittable, IHealable
     }
 
     // Управление эффектами
-    public void AddEffect(IEffect effect)
+    public void AddEffect(EffectBase effectBase)
     {
-        if (effect != null && !_activeEffects.Contains(effect))
+        if (effectBase != null && !_activeEffects.Contains(effectBase))
         {
-            _activeEffects.Add(effect);
-            effect.ApplyEffect();
+            _activeEffects.Add(effectBase);
+            effectBase.ApplyEffect(gameObject);
         }
     }
 
-    public void RemoveEffect(IEffect effect)
+    public void RemoveEffect(EffectBase effectBase)
     {
-        if (effect != null && _activeEffects.Contains(effect))
+        if (effectBase != null && _activeEffects.Contains(effectBase))
         {
-            _activeEffects.Remove(effect);
-            effect.RemoveEffect();
+            _activeEffects.Remove(effectBase);
+            effectBase.RemoveEffect(gameObject);
         }
     }
     
@@ -168,7 +157,7 @@ public class Player : MonoBehaviour, IHittable, IHealable
         Debug.Log("Player died!");
     }
 
-    public void Heal(float amount)
+    public void Heal(int amount)
     {
         int newHp = _data.Health + Mathf.CeilToInt(amount);
         _data.Health = Mathf.Clamp(newHp, 0, _playerData != null ? _playerData.MaxHealth : 100);
