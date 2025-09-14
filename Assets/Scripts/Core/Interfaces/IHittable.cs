@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Core.Interfaces
 {
     public interface IHittable
@@ -5,5 +7,7 @@ namespace Core.Interfaces
         void TakeDamage(float amount);
         bool IsAlive();
         void Die();
+        float GetCurrentHealth();
+        float GetMaxHealth();
     }
 }

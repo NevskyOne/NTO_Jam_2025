@@ -22,7 +22,7 @@
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "LeftMouse",
@@ -58,7 +58,7 @@
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "E",
@@ -67,7 +67,16 @@
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "DownAttack",
+                    "type": "Button",
+                    "id": "b3ee457b-a40d-4936-a596-ef05ff04ae66",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -167,6 +176,17 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "E",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "924a2101-9f1c-475c-a1ed-518929414c50",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "DownAttack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

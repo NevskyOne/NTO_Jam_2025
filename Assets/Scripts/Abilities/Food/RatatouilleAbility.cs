@@ -5,7 +5,7 @@ using Core.Interfaces;
 
 namespace Abilities.Food
 {
-    // Рататуй — выпускает 3 "тентакля" по направлению (TODO: заменить на реальные спавны лиан; 2x урон по "жиру")
+    // Рататуй — выпускает 3 зентаки(ввиде лиан) по направлению к курсору (2x урон по жиру)
     public class RatatouilleAbility : FoodAttackBase
     {
         public RatatouilleAbility(AttackDataSO data, Transform owner) : base(data, owner) { }
@@ -32,11 +32,29 @@ namespace Abilities.Food
                     if (h != null && !hit.Contains(h))
                     {
                         hit.Add(h);
-                        h.TakeDamage(GetDamage());
+                        
+                        float damage = GetDamage();
+                        // 2x урон по жиру
+                        if (HasGreaseEffect(c.gameObject))
+                        {
+                            damage *= 2f;
+                            Debug.Log($"Ratatouille: bonus damage to greasy enemy {c.name}");
+                        }
+                        
+                        h.TakeDamage(damage);
+                        Debug.Log($"Ratatouille vine hit {c.name} for {damage} damage");
                     }
                 }
             }
             Debug.Log($"Ratatouille: 3 hits along {direction}, dmg={GetDamage()}, step={step}, r={radius}");
+        }
+
+        private bool HasGreaseEffect(GameObject target)
+        {
+            // Проверяем наличие эффекта жирности
+            return target.CompareTag("Greasy") || 
+                   target.name.Contains("Grease") || 
+                   target.name.Contains("Burger");
         }
     }
 }

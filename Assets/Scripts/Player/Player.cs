@@ -6,10 +6,26 @@ using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour, IHittable, IHealable
+public enum FoodType
+{
+    None,
+    Tea,
+    IcedLatte,
+    DragonFruit,
+    Dumpling,
+    KoreanCarrot,
+    Ratatouille,
+    Burger,
+    ExplosiveCaramel,
+    PoisonPotato
+}
+
+[RequireComponent(typeof(UnityEngine.InputSystem.PlayerInput))]
+public class Player : MonoBehaviour, IMovable, IHittable, IHealable
 {
     [Header("Компоненты")]
     [SerializeField] private Rigidbody2D _rigidbody;
+    [SerializeField] private Collider2D _collider;
     [SerializeField] private GroundChecker _groundChecker;
 
     // Данные игрока
@@ -17,307 +33,386 @@ public class Player : MonoBehaviour, IHittable, IHealable
     private AttackDataSO _attackData;
     private MoveDataSO _moveData;
 
-    // Input System (через DI)
-    private InputActionAsset _inputActions;
-    private InputActionMap _map;
-    private InputAction _move;
-    private InputAction _jumpAction;
-    private InputAction _dashAction;
-    private InputAction _leftMouseAction;
-    private InputAction _rightMouseAction;
-    private InputAction _qAction;
-    private InputAction _eAction;
-    private InputAction _downAttackAction; // опционально
-
-    // Состояния
-    private enum PlayerState { Idle, Moving, Jumping, Dashing, Attacking, Parrying }
-    private PlayerState _state = PlayerState.Idle;
-    private float _dashTimeLeft;
-    private float _dashCooldownLeft;
-    private float _attackCooldownLeft;
-    private Vector2 _lastDirection = Vector2.right;
-    private Vector2 _cachedMove; // кэш ввода движения
-
-    // Логика движения и атак
+    // Input через Unity PlayerInput component
+    private UnityEngine.InputSystem.PlayerInput _playerInput;
     private IMovable _movement;
     private IAttack _mainAttack;
     private IAttack _downAttack;
     private IAttack _parryAttack;
+    private Vector2 _cachedMove;
+
+    // Состояния
+    private enum PlayerState { Idle, Moving, Jumping, Dashing, Attacking, Parrying }
+    private PlayerState _state = PlayerState.Idle;
+    private Vector2 _lastDirection = Vector2.right;
 
     // Наборы атак
     private List<IAttack> _mainAttackSet = new();
-    private List<IAttack> _abilitiesSet = new();
-
-    private List<IEffect> _effectSet;
+    public List<IAttack> AbilitiesSet = new();
+    
+    // Эффекты
+    private List<IEffect> _activeEffects = new();
 
     // Runtime-значения PlayerData
     private int _currentHealth;
     private int _currentMoney;
     private int _currentReputation;
 
-    // Короутина парирования
-    private Coroutine _currentParryCoroutine;
+    // Способности из биндера (перенесено из PlayerAbilitiesBinder)
+    [Header("Loadout")]
+    [SerializeField] private FoodType _lmbOverride = FoodType.None;
+    [SerializeField] private FoodType _qAbility = FoodType.None;
+    [SerializeField] private FoodType _eAbility = FoodType.None;
+    [Header("Passive/Always On")]
+    [SerializeField] private FoodType _passive = FoodType.None;
 
     [SerializeField] private Transform _dialogueBubblePos;
     public Transform DialogueBubblePos => _dialogueBubblePos;
 
     [Inject]
-    private void Construct(PlayerDataSO playerData, AttackDataSO attackData, MoveDataSO moveData, InputActionAsset inputActions)
+    private void Construct(PlayerDataSO playerData, AttackDataSO attackData, MoveDataSO moveData)
     {
         _playerData = playerData;
         _attackData = attackData;
         _moveData = moveData;
-        _inputActions = inputActions;
     }
 
     private void Awake()
     {
         if (_rigidbody == null) _rigidbody = GetComponent<Rigidbody2D>();
+        if (_collider == null) _collider = GetComponent<Collider2D>();
+        if (_groundChecker == null) _groundChecker = GetComponentInChildren<GroundChecker>();
+        _playerInput = GetComponent<UnityEngine.InputSystem.PlayerInput>();
+
+        // Отладка компонентов
+        Debug.Log($"Player Awake: rigidbody={_rigidbody != null}, groundChecker={_groundChecker != null}");
+        if (_rigidbody != null)
+        {
+            Debug.Log($"Rigidbody2D: mass={_rigidbody.mass}, drag={_rigidbody.linearDamping}, freezePositionX={_rigidbody.freezeRotation}");
+            Debug.Log($"Rigidbody2D constraints: {_rigidbody.constraints}");
+        }
+
+        // Проверяем наличие DownAttack действия в Input Action Asset
+        if (_playerInput != null && _playerInput.actions != null)
+        {
+            var downAttackAction = _playerInput.actions.FindAction("DownAttack");
+            Debug.Log($"DownAttack action found: {downAttackAction != null}");
+            if (downAttackAction != null)
+            {
+                Debug.Log($"DownAttack bindings: {downAttackAction.bindings.Count}");
+                foreach (var binding in downAttackAction.bindings)
+                {
+                    Debug.Log($"DownAttack binding: {binding.path}");
+                }
+            }
+        }
 
         _movement = new PlayerMovementLogic(_moveData, _rigidbody);
         _mainAttack = new MainAttackLogic(_attackData, transform);
         _downAttack = new DownAttackLogic(_attackData, transform);
         _parryAttack = new ParryAttackLogic(_attackData, transform);
 
-        _currentHealth = _playerData != null ? _playerData.MaxHealth : 100;
-        _currentMoney = _playerData != null ? _playerData.StartMoney : 0;
-        _currentReputation = _playerData != null ? _playerData.StartReputation : 0;
+        // Отладка данных
+        if (_moveData != null)
+        {
+            Debug.Log($"MoveData: speed={_moveData.MoveSpeed}, accel={_moveData.Acceleration}, jumpForce={_moveData.JumpForce}");
+        }
+        else
+        {
+            Debug.LogError("MoveDataSO is NULL! Check Zenject bindings in GameplayInstaller");
+        }
 
         // Инициализируем набор основной атаки базовой атакой
         _mainAttackSet.Clear();
         _mainAttackSet.Add(_mainAttack);
+        
+        // Инициализация способностей (перенесено из PlayerAbilitiesBinder)
+        InitializeAbilities();
+
+        _currentHealth = _playerData != null ? _playerData.MaxHealth : 100;
+        _currentMoney = _playerData != null ? _playerData.StartMoney : 0;
+        _currentReputation = _playerData != null ? _playerData.StartReputation : 0;
     }
 
     private void OnEnable()
     {
         if (_groundChecker != null)
-            _groundChecker.GroundStateChanged += _movement.UpdateGrounded;
-
-        // Настройка и подписка на Input Actions
-        if (_inputActions != null)
-        {
-            _map = _inputActions.FindActionMap("Player", throwIfNotFound: true);
-            _move = _map.FindAction("Move", throwIfNotFound: true);
-            _jumpAction = _map.FindAction("Jump", throwIfNotFound: true);
-            _dashAction = _map.FindAction("Shift", throwIfNotFound: true);
-            _leftMouseAction = _map.FindAction("LeftMouse", throwIfNotFound: true);
-            _rightMouseAction = _map.FindAction("RightMouse", throwIfNotFound: true);
-            _qAction = _map.FindAction("Q", throwIfNotFound: true);
-            _eAction = _map.FindAction("E", throwIfNotFound: true);
-            _downAttackAction = _map.FindAction("DownAttack", throwIfNotFound: false);
-
-            // Move
-            _move.performed += OnMovePerformed;
-            _move.canceled += OnMoveCanceled;
-            // Jump/Dash
-            _jumpAction.performed += OnJumpPerformed;
-            _dashAction.performed += OnDashPerformed;
-            // Combat/Abilities
-            _leftMouseAction.performed += OnLeftMousePerformed;
-            _rightMouseAction.performed += OnRightMousePerformed;
-            _qAction.performed += OnQPerformed;
-            _eAction.performed += OnEPerformed;
-            if (_downAttackAction != null) _downAttackAction.performed += OnDownAttackPerformed;
-
-            _map.Enable();
-        }
-        else
-        {
-            Debug.LogError("Player: InputActionAsset не привязан в GameplayInstaller");
-        }
+            _groundChecker.GroundStateChanged += OnGroundChanged;
     }
 
     private void OnDisable()
     {
         if (_groundChecker != null)
-            _groundChecker.GroundStateChanged -= _movement.UpdateGrounded;
+            _groundChecker.GroundStateChanged -= OnGroundChanged;
+    }
 
-        if (_map != null)
+    private void OnGroundChanged(bool grounded)
+    {
+        _movement.UpdateGrounded(grounded);
+        if (grounded && _state == PlayerState.Jumping)
         {
-            if (_move != null) { _move.performed -= OnMovePerformed; _move.canceled -= OnMoveCanceled; }
-            if (_jumpAction != null) _jumpAction.performed -= OnJumpPerformed;
-            if (_dashAction != null) _dashAction.performed -= OnDashPerformed;
-            if (_leftMouseAction != null) _leftMouseAction.performed -= OnLeftMousePerformed;
-            if (_rightMouseAction != null) _rightMouseAction.performed -= OnRightMousePerformed;
-            if (_qAction != null) _qAction.performed -= OnQPerformed;
-            if (_eAction != null) _eAction.performed -= OnEPerformed;
-            if (_downAttackAction != null) _downAttackAction.performed -= OnDownAttackPerformed;
-            _map.Disable();
+            _state = PlayerState.Idle;
         }
+        Debug.Log($"Ground state changed: {grounded}");
     }
 
     private void Update()
     {
-        UpdateTimers();
+        HandleMovement();
+        HandleState();
+        
+        // Обновляем кулдауны атак
+        ((MainAttackLogic)_mainAttack).UpdateCooldown();
+        ((DownAttackLogic)_downAttack).UpdateCooldown();
+        ((ParryAttackLogic)_parryAttack).UpdateCooldown();
+    }
 
-        if (Time.frameCount % 60 == 0)
+    private void HandleMovement()
+    {
+        // Замедляем движение во время атак
+        Vector2 moveInput = _cachedMove;
+        if (_state == PlayerState.Attacking || _state == PlayerState.Parrying)
         {
-            Debug.Log($"Player: state={_state}, grounded={_movement.IsGrounded()}, dashTime={_dashTimeLeft}, dashCd={_dashCooldownLeft}, atkCd={_attackCooldownLeft}");
+            moveInput *= 0.3f; // Замедление на 70% во время атак
         }
-
-        // Движение — каждый кадр
-        Move(_cachedMove, Time.deltaTime);
+        _movement.Move(moveInput, Time.deltaTime);
     }
 
-    // Input callbacks
-    private void OnMovePerformed(InputAction.CallbackContext ctx)
+    private void HandleState()
     {
-        // Поддержка 2DVector и 1D Axis
-        try { _cachedMove = ctx.ReadValue<Vector2>(); }
-        catch { float x = 0f; try { x = ctx.ReadValue<float>(); } catch { x = 0f; } _cachedMove = new Vector2(x, 0f); }
-    }
-
-    private void OnMoveCanceled(InputAction.CallbackContext ctx)
-    {
-        _cachedMove = Vector2.zero;
-    }
-
-    private void OnJumpPerformed(InputAction.CallbackContext ctx) { Jump(); }
-    private void OnDashPerformed(InputAction.CallbackContext ctx) { Dash(_cachedMove.normalized); }
-    private void OnLeftMousePerformed(InputAction.CallbackContext ctx)
-    {
-        // Фолбэк для удара вниз без отдельного действия: в воздухе + удержание "вниз"
-        if (!_movement.IsGrounded() && _cachedMove.y < -0.5f)
+        if (_state == PlayerState.Attacking)
         {
-            PerformAirAttack(_cachedMove);
-            return;
-        }
-        PerformAttack(_cachedMove);
-    }
-    private void OnRightMousePerformed(InputAction.CallbackContext ctx) { PerformParry(); }
-    private void OnQPerformed(InputAction.CallbackContext ctx) { UseFood(0); }
-    private void OnEPerformed(InputAction.CallbackContext ctx) { UseFood(1); }
-    private void OnDownAttackPerformed(InputAction.CallbackContext ctx) { if (!_movement.IsGrounded()) PerformAirAttack(_cachedMove); }
-
-    private void UpdateTimers()
-    {
-        if (_dashTimeLeft > 0)
-        {
-            _dashTimeLeft -= Time.deltaTime;
-            if (_dashTimeLeft <= 0 && _state == PlayerState.Dashing)
+            if (_mainAttack != null)
             {
-                _state = PlayerState.Idle;
-                Debug.Log("Dash ended");
+                if (_mainAttack.GetAttackDuration() <= 0)
+                {
+                    _state = PlayerState.Idle;
+                    Debug.Log("Attack state ended");
+                }
             }
         }
-
-        if (_dashCooldownLeft > 0)
+        else if (_state == PlayerState.Parrying)
         {
-            _dashCooldownLeft -= Time.deltaTime;
-            if (_dashCooldownLeft <= 0)
+            if (_parryAttack != null)
             {
-                Debug.Log("Dash cooldown ended");
+                if (_parryAttack.GetAttackDuration() <= 0)
+                {
+                    _state = PlayerState.Idle;
+                    Debug.Log("Parry state ended");
+                }
             }
         }
-
-        if (_attackCooldownLeft > 0)
+        else if (_state == PlayerState.Dashing)
         {
-            _attackCooldownLeft -= Time.deltaTime;
-            if (_attackCooldownLeft <= 0 && _state == PlayerState.Attacking)
+            if (_movement != null)
             {
-                _state = PlayerState.Idle;
-                Debug.Log("Attack cooldown ended");
+                if (_movement.GetDashDuration() <= 0)
+                {
+                    _state = PlayerState.Idle;
+                    Debug.Log("Dash state ended");
+                }
+            }
+            
+            // Во время dash разрешаем ограниченное движение
+            _movement.Move(_cachedMove, Time.deltaTime);
+        }
+        else
+        {
+            _state = Mathf.Abs(_cachedMove.x) > 0.01f ? PlayerState.Moving : PlayerState.Idle;
+            if (_cachedMove.x != 0) _lastDirection = new Vector2(Mathf.Sign(_cachedMove.x), 0);
+        }
+        
+        // Отладка движения
+        if (Time.frameCount % 60 == 0 && _cachedMove != Vector2.zero)
+        {
+            Debug.Log($"Movement Debug: cachedMove={_cachedMove}, velocity={_rigidbody.linearVelocity}, state={_state}");
+        }
+    }
+
+    // Send Messages callbacks (вызываются автоматически PlayerInput компонентом)
+    public void OnMove(InputValue value)
+    {
+        float horizontal = value.Get<float>();
+        _cachedMove = new Vector2(horizontal, 0f);
+        Debug.Log($"OnMove: {_cachedMove}");
+    }
+
+    public void OnJump(InputValue value) 
+    { 
+        if (value.isPressed && _state != PlayerState.Attacking && _state != PlayerState.Parrying && _state != PlayerState.Dashing) 
+        {
+            if (_movement.TryJump())
+            {
+                _state = PlayerState.Jumping;
+                Debug.Log("Jump executed");
             }
         }
     }
-
-    // Входные методы движения/боя
-    public void Move(Vector2 direction, float deltaTime)
-    {
-        if (_state == PlayerState.Attacking || _state == PlayerState.Parrying) return;
-        if (direction.x != 0) _lastDirection = new Vector2(Mathf.Sign(direction.x), 0);
-        _movement.Move(direction, deltaTime);
-        _state = Mathf.Abs(direction.x) > 0.01f ? PlayerState.Moving : PlayerState.Idle;
-    }
-
-    public void Jump()
-    {
-        Debug.Log($"Jump attempt: state={_state}, grounded={_movement.IsGrounded()}");
-        if (_state is PlayerState.Attacking or PlayerState.Parrying or PlayerState.Dashing) return;
-
-        _movement.Jump();
-        _state = PlayerState.Jumping;
-        Debug.Log($"Jump executed");
-    }
-
-    public void Dash(Vector2 direction)
-    {
-        Debug.Log($"Dash attempt: state={_state}, dashCd={_dashCooldownLeft}, dir={direction}");
-        if (_state is PlayerState.Dashing or PlayerState.Attacking or PlayerState.Parrying) return;
-        if (_dashCooldownLeft > 0) return;
-
-        if (direction == Vector2.zero)
+    
+    public void OnShift(InputValue value) 
+    { 
+        if (value.isPressed && _state != PlayerState.Dashing && _state != PlayerState.Attacking && _state != PlayerState.Parrying) 
         {
-            direction = _lastDirection;
-            Debug.Log($"Using last direction for dash: {direction}");
+            Vector2 direction = _cachedMove.normalized;
+            if (direction == Vector2.zero) direction = _lastDirection;
+            _movement.Dash(direction);
+            _state = PlayerState.Dashing;
+            Debug.Log($"Dash executed: {direction}");
         }
-
-        _state = PlayerState.Dashing;
-        _dashTimeLeft = _moveData.DashDuration;
-        _dashCooldownLeft = _moveData.DashCooldown;
-        _lastDirection = direction.normalized;
-        _movement.Dash(_lastDirection);
-
-        Debug.Log($"Dash executed dir={_lastDirection}, dashTime={_dashTimeLeft}, cd={_dashCooldownLeft}");
+    }
+    
+    public void OnLeftMouse(InputValue value) 
+    { 
+        if (value.isPressed && _state != PlayerState.Attacking && _state != PlayerState.Dashing && _state != PlayerState.Parrying) 
+        {
+            // Запрещаем атаку в воздухе
+            if (!_movement.IsGrounded())
+            {
+                Debug.Log("Cannot attack while in air");
+                return;
+            }
+            
+            // Проверяем кулдаун основной атаки
+            IAttack main = (_mainAttackSet != null && _mainAttackSet.Count > 0) ? _mainAttackSet[_mainAttackSet.Count - 1] : _mainAttack;
+            if (main != null && main.GetAttackDuration() > 0)
+            {
+                Debug.Log("Main attack on cooldown");
+                return;
+            }
+            
+            // Берем верхнюю (последнюю добавленную) основную атаку или базовую
+            main?.PerformAttack(_lastDirection);
+            _state = PlayerState.Attacking;
+            Debug.Log("Main attack executed");
+        }
     }
 
-    // Входные методы из инпута
-    public void PerformAttack(Vector2 direction)
+    public void OnRightMouse(InputValue value) 
+    { 
+        if (value.isPressed && _state != PlayerState.Attacking && _state != PlayerState.Dashing && _state != PlayerState.Parrying) 
+        {
+            // Запрещаем парирование в воздухе
+            if (!_movement.IsGrounded())
+            {
+                Debug.Log("Cannot parry while in air");
+                return;
+            }
+            
+            // Проверяем кулдаун парирования
+            if (_parryAttack.GetAttackDuration() > 0)
+            {
+                Debug.Log("Parry on cooldown");
+                return;
+            }
+            
+            _parryAttack.PerformAttack(Vector2.zero);
+            _state = PlayerState.Parrying;
+            Debug.Log("Parry executed");
+        }
+    }
+
+    public void OnQ(InputValue value) { if (value.isPressed) UseFood(0); }
+    public void OnE(InputValue value) { if (value.isPressed) UseFood(1); }
+    public void OnDownAttack(InputValue value) 
+    { 
+        Debug.Log($"OnDownAttack called: isPressed={value.isPressed}, isGrounded={_movement.IsGrounded()}, state={_state}");
+        
+        if (value.isPressed && !_movement.IsGrounded()) 
+        {
+            Debug.Log($"DownAttack conditions met, checking cooldown...");
+            
+            // Проверяем кулдаун атаки вниз
+            float cooldown = _downAttack.GetAttackDuration();
+            Debug.Log($"DownAttack cooldown: {cooldown}");
+            
+            if (_downAttack.GetAttackDuration() > 0)
+            {
+                Debug.Log("Down attack on cooldown");
+                return;
+            }
+            
+            Debug.Log("Executing DownAttack...");
+            _downAttack.PerformAttack(_lastDirection);
+            _state = PlayerState.Attacking;
+            Debug.Log("Down attack executed");
+        }
+        else
+        {
+            Debug.Log($"DownAttack conditions NOT met: isPressed={value.isPressed}, isGrounded={_movement.IsGrounded()}");
+        }
+    }
+
+    // Переключение способностей
+    public void On1(InputValue value) { if (value.isPressed) SwitchAbility(0); }
+    public void On2(InputValue value) { if (value.isPressed) SwitchAbility(1); }
+    public void On3(InputValue value) { if (value.isPressed) SwitchAbility(2); }
+    
+    private void SwitchAbility(int slot)
     {
-        Debug.Log($"Attack attempt: state={_state}, atkCd={_attackCooldownLeft}");
-        if (_state is PlayerState.Attacking or PlayerState.Dashing or PlayerState.Parrying) return;
-        if (_attackCooldownLeft > 0) return;
-
-        _state = PlayerState.Attacking;
-        _attackCooldownLeft = _attackData.AttackCooldown;
-        if (direction != Vector2.zero) _lastDirection = direction.normalized;
-
-        // Берем верхнюю (последнюю добавленную) основную атаку или базовую
-        IAttack main = (_mainAttackSet != null && _mainAttackSet.Count > 0) ? _mainAttackSet[_mainAttackSet.Count - 1] : _mainAttack;
-        main?.PerformAttack(_lastDirection);
-
-        Debug.Log($"Attack executed: dir={_lastDirection}, cd={_attackCooldownLeft}");
+        Debug.Log($"Switch to ability slot {slot}");
+        // Здесь может быть логика переключения активной способности
+        // Например, изменение UI или подготовка к использованию способности
     }
 
-    public void PerformAirAttack(Vector2 direction)
-    {
-        if (_movement.IsGrounded() || _state is PlayerState.Attacking or PlayerState.Dashing or PlayerState.Parrying || _attackCooldownLeft > 0) return;
-        _state = PlayerState.Attacking;
-        _attackCooldownLeft = _attackData.AttackCooldown;
-        if (direction != Vector2.zero) _lastDirection = direction.normalized;
-        _downAttack.PerformAttack(_lastDirection);
-    }
-
-    public void PerformParry()
-    {
-        Debug.Log($"Parry attempt: state={_state}");
-        if (_state is PlayerState.Attacking or PlayerState.Dashing or PlayerState.Parrying) return;
-
-        _state = PlayerState.Parrying;
-        if (_currentParryCoroutine != null) StopCoroutine(_currentParryCoroutine);
-        _currentParryCoroutine = StartCoroutine(ParryTimer());
-        _parryAttack.PerformAttack(Vector2.zero);
-        Debug.Log("Parry executed");
-    }
-
-    private IEnumerator ParryTimer()
-    {
-        yield return new WaitForSeconds(0.5f);
-        _state = PlayerState.Idle;
-        _currentParryCoroutine = null;
-        Debug.Log("Parry state reset");
-    }
+    // Делегирование к IMovable
+    public bool IsGrounded() => _movement.IsGrounded();
+    public Vector2 GetVelocity() => _movement.GetVelocity();
+    public void SetVelocity(Vector2 velocity) => _movement.SetVelocity(velocity);
+    public void UpdateGrounded(bool isGrounded) => _movement.UpdateGrounded(isGrounded);
+    public float GetDashDuration() => _movement.GetDashDuration();
+    public void Move(Vector2 direction, float deltaTime) => _movement.Move(direction, deltaTime);
+    public void Jump() => _movement.Jump();
+    public bool TryJump() => _movement.TryJump();
+    public void Dash(Vector2 direction) => _movement.Dash(direction);
 
     // Слоты способностей
     public void UseFood(int slot)
     {
-        if (_abilitiesSet != null && slot >= 0 && slot < _abilitiesSet.Count && _abilitiesSet[slot] != null)
+        if (AbilitiesSet != null && slot >= 0 && slot < AbilitiesSet.Count && AbilitiesSet[slot] != null)
         {
             Debug.Log($"Use ability slot={slot}");
-            _abilitiesSet[slot].PerformAttack(_lastDirection);
+            AbilitiesSet[slot].PerformAttack(_lastDirection);
+            
+            // Удаляем блюдо после использования (одноразовое использование)
+            AbilitiesSet[slot] = null;
+            Debug.Log($"Food consumed from slot {slot}");
             return;
         }
         Debug.Log($"Use food: slot={slot} has no ability");
+    }
+
+    // Инициализация способностей (перенесено из PlayerAbilitiesBinder)
+    private void InitializeAbilities()
+    {
+        EquipLmbOverride(CreateAbility(_lmbOverride));
+        EquipQ(CreateAbility(_qAbility));
+        EquipE(CreateAbility(_eAbility));
+        ApplyPassive(_passive);
+    }
+
+    private IAttack CreateAbility(FoodType type)
+    {
+        switch (type)
+        {
+            case FoodType.Tea: return new Abilities.Food.TeaAbility(_attackData, transform);
+            case FoodType.IcedLatte: return new Abilities.Food.IcedLatteAbility(_attackData, transform);
+            case FoodType.DragonFruit: return new Abilities.Food.DragonFruitAbility(_attackData, transform);
+            case FoodType.Dumpling: return new Abilities.Food.DumplingAbility(_attackData, transform);
+            case FoodType.KoreanCarrot: return new Abilities.Food.KoreanCarrotAbility(_attackData, transform);
+            case FoodType.Ratatouille: return new Abilities.Food.RatatouilleAbility(_attackData, transform);
+            case FoodType.Burger: return new Abilities.Food.BurgerAbility(_attackData, transform);
+            case FoodType.ExplosiveCaramel: return new Abilities.Food.ExplosiveCaramelAbility(_attackData, transform);
+            case FoodType.PoisonPotato: return new Abilities.Food.PoisonPotatoAbility(_attackData, transform);
+            default: return null;
+        }
+    }
+
+    private void ApplyPassive(FoodType type)
+    {
+        if (type == FoodType.KoreanCarrot)
+        {
+            // SetExtraJumps(1);
+        }
     }
 
     // Заполнение наборов атак из биндеров/загрузчиков
@@ -328,7 +423,7 @@ public class Player : MonoBehaviour, IHittable, IHealable
 
     public void SetAbilitiesSet(List<IAttack> abilities)
     {
-        _abilitiesSet = abilities ?? new List<IAttack>();
+        AbilitiesSet = abilities ?? new List<IAttack>();
     }
 
     // Обратная совместимость: методы экипировки обновляют списки
@@ -340,36 +435,32 @@ public class Player : MonoBehaviour, IHittable, IHealable
     }
     public void EquipQ(IAttack ability)
     {
-        while (_abilitiesSet.Count <= 0) _abilitiesSet.Add(null);
-        _abilitiesSet[0] = ability;
+        while (AbilitiesSet.Count <= 0) AbilitiesSet.Add(null);
+        AbilitiesSet[0] = ability;
     }
     public void EquipE(IAttack ability)
     {
-        while (_abilitiesSet.Count <= 1) _abilitiesSet.Add(null);
-        _abilitiesSet[1] = ability;
+        while (AbilitiesSet.Count <= 1) AbilitiesSet.Add(null);
+        AbilitiesSet[1] = ability;
     }
-    
+
+    // Управление эффектами
     public void AddEffect(IEffect effect)
     {
-        _effectSet.Add(effect);
-        effect.ApplyEffect();
+        if (effect != null && !_activeEffects.Contains(effect))
+        {
+            _activeEffects.Add(effect);
+            effect.ApplyEffect();
+        }
     }
 
-    public float GetDamage() => _attackData.BaseDamage;
-    public float GetAttackRadius() => _attackData.AttackRadius;
-
-    public void ResetAllStates()
+    public void RemoveEffect(IEffect effect)
     {
-        _state = PlayerState.Idle;
-        _dashTimeLeft = 0f;
-        _dashCooldownLeft = 0f;
-        _attackCooldownLeft = 0f;
-        if (_currentParryCoroutine != null)
+        if (effect != null && _activeEffects.Contains(effect))
         {
-            StopCoroutine(_currentParryCoroutine);
-            _currentParryCoroutine = null;
+            _activeEffects.Remove(effect);
+            effect.RemoveEffect();
         }
-        Debug.Log("All player states have been reset");
     }
 
     // IHittable / IHealable
@@ -394,11 +485,4 @@ public class Player : MonoBehaviour, IHittable, IHealable
     {
         Debug.Log("Player died!");
     }
-
-    // Выдача дополнительных прыжков от навыков/еды
-    public void SetExtraJumps(int extra)
-    {
-        _movement.SetExtraJumps(extra);
-    }
-    
 }
