@@ -6,7 +6,6 @@ using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using UnityEngine.InputSystem;
 
-
 [RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 {
@@ -44,39 +43,107 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public Transform DialogueBubblePos => _dialogueBubblePos;
     public PlayerMovementLogic Movement => (PlayerMovementLogic)_movement;
 
+    private DiContainer _container;
+
+    [Header("Debug/Visuals")]
+    [SerializeField] private bool _showAttackGizmos = true;
+
     [Inject]
-    private void Construct(PlayerDataSO playerData, MoveDataSO moveData)
+    private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input, DiContainer container)
     {
         _playerData = playerData;
         _moveData = moveData;
+        _playerInput = input; // DI через Zenject
+        _container = container;
     }
 
     private void Awake()
     {
-        _playerInput = GetComponent<PlayerInput>();
+        // _playerInput приходит из DI, оставляем фолбэк на случай отсутствия компонента
         if (_playerInput == null)
         {
-            Debug.LogError("Player: Unity PlayerInput component is missing. Please add PlayerInput to the Player GameObject.");
+            _playerInput = GetComponent<PlayerInput>();
+            if (_playerInput == null)
+                Debug.LogError("Player: Unity PlayerInput component is missing. Please add PlayerInput to the Player GameObject.");
         }
-        _movement = new PlayerMovementLogic(_moveData, _rigidbody);
-        // Подключаем события ввода к логике движения без DI
-        Movement.Initialize(this, _playerInput);
-        _mainAttackSet = _playerData.AttackSet;
-
+        if (_moveData == null)
+        {
+            Debug.LogError("Player: MoveDataSO is null. Assign it in GameplayInstaller.");
+        }
+        else
+        {
+            _movement = new PlayerMovementLogic(_moveData, _rigidbody);
+            // Подключаем события ввода к логике движения
+            Movement.Initialize(this, _playerInput);
+        }
+        if (_playerData == null)
+        {
+            Debug.LogError("Player: PlayerDataSO is null. Assign it in GameplayInstaller.");
+        }
+        else
+        {
+            _mainAttackSet = _playerData.AttackSet;
+            // ВАЖНО: инъекция зависимостей в объекты атак (Player, PlayerInput и т.д.)
+            if (_container != null && _mainAttackSet != null)
+            {
+                foreach (var attack in _mainAttackSet)
+                {
+                    if (attack != null)
+                        _container.Inject(attack);
+                }
+            }
+        }
+ 
         // Отладка данных
-        Debug.Log($"MoveData: speed={_moveData.MoveSpeed}, accel={_moveData.Acceleration}, jumpForce={_moveData.JumpForce}");
-        
+        if (_moveData != null)
+            Debug.Log($"MoveData: speed={_moveData.MoveSpeed}, accel={_moveData.Acceleration}, jumpForce={_moveData.JumpForce}");
+ 
+        // Инициализация здоровья (если не загружено сохранение)
+        if (_playerData != null)
+        {
+            if (_data.Health <= 0 || _data.Health > _playerData.MaxHealth)
+                _data.Health = _playerData.MaxHealth;
+        }
+
+        // Принудительно включаем карту действий Player (если активна не она)
+        if (_playerInput != null)
+        {
+            var mapName = _playerInput.currentActionMap != null ? _playerInput.currentActionMap.name : "(null)";
+            Debug.Log($"PlayerInput current map: {mapName}");
+            if (_playerInput.currentActionMap == null || _playerInput.currentActionMap.name != "Player")
+            {
+                _playerInput.SwitchCurrentActionMap("Player");
+                Debug.Log("PlayerInput: switched current action map to 'Player'");
+            }
+        }
+
+        // Диагностика AttackSet
+        Debug.Log($"AttackSet count: {_mainAttackSet?.Count ?? -1}");
+        if (_mainAttackSet != null)
+        {
+            for (int i = 0; i < _mainAttackSet.Count; i++)
+            {
+                var a = _mainAttackSet[i];
+                Debug.Log($"Attack[{i}]: {a?.GetType().Name} binding='{a?.Data?.InputBinding}'");
+            }
+        }
     }
 
     private void OnEnable()
     {
         if (_groundChecker != null)
             _groundChecker.GroundStateChanged += OnGroundChanged;
+        // Активируем основные атаки игрока, чтобы вернулась логика ударов
+        if (_mainAttackSet != null)
+        {
+            foreach (var attack in _mainAttackSet)
+                attack?.Activate();
+        }
         if (_playerInput != null)
         {
-            _playerInput.actions["1"].performed += _ => UseFood(0);
-            _playerInput.actions["2"].performed += _ => UseFood(1);
-            _playerInput.actions["3"].performed += _ => UseFood(2);
+            _playerInput.actions["1"].performed += OnFood1;
+            _playerInput.actions["2"].performed += OnFood2;
+            _playerInput.actions["3"].performed += OnFood3;
         }
     }
 
@@ -84,11 +151,17 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     {
         if (_groundChecker != null)
             _groundChecker.GroundStateChanged -= OnGroundChanged;
+        // Деактивируем основные атаки
+        if (_mainAttackSet != null)
+        {
+            foreach (var attack in _mainAttackSet)
+                attack?.Deactivate();
+        }
         if (_playerInput != null)
         {
-            _playerInput.actions["1"].performed -= _ => UseFood(0);
-            _playerInput.actions["2"].performed -= _ => UseFood(1);
-            _playerInput.actions["3"].performed -= _ => UseFood(2);
+            _playerInput.actions["1"].performed -= OnFood1;
+            _playerInput.actions["2"].performed -= OnFood2;
+            _playerInput.actions["3"].performed -= OnFood3;
         }
     }
 
@@ -207,5 +280,65 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     {
         int newHp = _data.Health + Mathf.CeilToInt(amount);
         _data.Health = Mathf.Clamp(newHp, 0, _playerData != null ? _playerData.MaxHealth : 100);
+    }
+
+    // Input handlers for food hotkeys (so we can unsubscribe correctly)
+    private void OnFood1(InputAction.CallbackContext ctx) => UseFood(0);
+    private void OnFood2(InputAction.CallbackContext ctx) => UseFood(1);
+    private void OnFood3(InputAction.CallbackContext ctx) => UseFood(2);
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!_showAttackGizmos) return;
+        // Берём список атак: в рантайме — _mainAttackSet, в редакторе — из _playerData (если есть)
+        var attacks = _mainAttackSet ?? _playerData?.AttackSet;
+        if (attacks == null) return;
+
+        Vector2 face = Vector2.right;
+        if (_movement is PlayerMovementLogic m)
+        {
+            var d = m.LastDirection;
+            if (d != Vector2.zero) face = d.normalized;
+        }
+
+        var pos = (Vector2)transform.position;
+        foreach (var attack in attacks)
+        {
+            if (attack == null || attack.Data == null) continue;
+
+            // Вперёд (ЛКМ) — MainAttackLogic с MainAttackData
+            if (attack is MainAttackLogic)
+            {
+                var data = attack.Data as Core.Data.ScriptableObjects.MainAttackData;
+                if (data == null) continue;
+                float radius = data.Radius;
+                Vector2 center = pos + face * radius * data.ForwardOffset;
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(center, radius);
+                continue;
+            }
+
+            // Вниз (S) — DownAttackLogic с MainAttackData
+            if (attack is DownAttackLogic)
+            {
+                var data = attack.Data as Core.Data.ScriptableObjects.MainAttackData;
+                if (data == null) continue;
+                float radius = data.Radius;
+                Vector2 center = pos + Vector2.down * radius * data.ForwardOffset;
+                Gizmos.color = Color.blue;
+                Gizmos.DrawWireSphere(center, radius);
+                continue;
+            }
+
+            // Парирование (ПКМ) — ParryAttackLogic с ParryAttackData
+            if (attack is ParryAttackLogic)
+            {
+                var data = attack.Data as Core.Data.ScriptableObjects.ParryAttackData;
+                if (data == null) continue;
+                float radius = data.Radius;
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(pos, radius);
+            }
+        }
     }
 }

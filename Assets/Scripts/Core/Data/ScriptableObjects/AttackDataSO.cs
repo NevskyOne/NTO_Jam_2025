@@ -6,7 +6,7 @@ namespace Core.Data.ScriptableObjects
     public class AttackDataSO : ScriptableObject
     {
         [Header("Base")]
-        [field:SerializeReference] public string InputBinding {get; private set; }
-        [field:SerializeReference] public int BaseDamage {get; private set; }
+        [field: SerializeField] public string InputBinding { get; private set; } = "";
+        [field: SerializeField] public int BaseDamage { get; private set; } = 1;
     }
 }
