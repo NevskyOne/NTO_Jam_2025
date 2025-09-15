@@ -9,10 +9,11 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 {
-    [Header("Компоненты")]
+    [Header("Components")]
     [SerializeField] private Rigidbody2D _rigidbody;
     [SerializeField] private Collider2D _collider;
     [SerializeField] private GroundChecker _groundChecker;
+    [SerializeField] private InteractableTrigger _interactableTrigger;
     [SerializeField] private Transform _dialogueBubblePos;
     [SerializeField] private Transform _cameraTarget;
 
@@ -36,13 +37,12 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     
     private CurrentPlayerData _data;
 
+    private IInteractable _currentInteractable;
     public PlayerState State => _state;
     public CurrentPlayerData Data => _data;
     public Transform DialogueBubblePos => _dialogueBubblePos;
     public PlayerMovementLogic Movement => (PlayerMovementLogic)_movement;
-
     
-
     [Header("Debug/Visuals")]
     [SerializeField] private bool _showAttackGizmos = true;
 
@@ -98,11 +98,15 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             foreach (var attack in _mainAttackSet)
                 attack?.Activate();
         }
+
+        _interactableTrigger.FindInter += inter => _currentInteractable = inter;
+        _interactableTrigger.LostInter += () =>  _currentInteractable = null;
         if (_playerInput != null)
         {
             _playerInput.actions["1"].performed += OnFood1;
             _playerInput.actions["2"].performed += OnFood2;
             _playerInput.actions["3"].performed += OnFood3;
+            _playerInput.actions["E"].performed += InteractWith;
         }
     }
 
@@ -116,14 +120,21 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             foreach (var attack in _mainAttackSet)
                 attack?.Deactivate();
         }
+        _interactableTrigger.FindInter -= inter => _currentInteractable = inter;
+        _interactableTrigger.LostInter -= () =>  _currentInteractable = null;
         if (_playerInput != null)
         {
             _playerInput.actions["1"].performed -= OnFood1;
             _playerInput.actions["2"].performed -= OnFood2;
             _playerInput.actions["3"].performed -= OnFood3;
+            _playerInput.actions["E"].performed -= InteractWith;
         }
     }
-    
+
+    private void InteractWith(InputAction.CallbackContext ctx)
+    {
+        _currentInteractable?.Interact();
+    }
 
     private void OnGroundChanged(bool grounded)
     {

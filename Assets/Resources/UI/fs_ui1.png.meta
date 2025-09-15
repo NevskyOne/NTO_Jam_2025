@@ -612,7 +612,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: fs_ui1_27
+      name: dialog
       rect:
         serializedVersion: 2
         x: 55
@@ -621,7 +621,7 @@ TextureImporter:
         height: 12
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 2, y: 2, z: 2, w: 2}
       customData: 
       outline: []
       physicsShape: []
@@ -678,7 +678,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: fs_ui1_35
+      name: dialog_2
       rect:
         serializedVersion: 2
         x: 55
@@ -687,7 +687,7 @@ TextureImporter:
         height: 12
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 2, y: 2, z: 2, w: 2}
       customData: 
       outline: []
       physicsShape: []
@@ -847,6 +847,8 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":2,"spriteAlignment":0,"pivotUnitMode":1,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
+      dialog: -4987709393236091011
+      dialog_2: 7543928492533641581
       fs_ui1_0: -4196929613614152899
       fs_ui1_1: -3647859580021883002
       fs_ui1_10: 5841904839526750936
@@ -867,7 +869,6 @@ TextureImporter:
       fs_ui1_24: 8684018458584260702
       fs_ui1_25: 3228158327267153549
       fs_ui1_26: -8454490997498727448
-      fs_ui1_27: -4987709393236091011
       fs_ui1_28: -3445395097891100116
       fs_ui1_29: -3743274828289297597
       fs_ui1_3: 5705972559319987221
@@ -876,7 +877,6 @@ TextureImporter:
       fs_ui1_32: 4158998155317382992
       fs_ui1_33: 8613395471552532854
       fs_ui1_34: 1968695283892192177
-      fs_ui1_35: 7543928492533641581
       fs_ui1_36: 2221544883648630736
       fs_ui1_37: 7872859486574948853
       fs_ui1_38: 6066252600931759574

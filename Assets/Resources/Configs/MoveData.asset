@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MoveData
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.MoveDataSO
   _moveSpeed: 5
-  _maxMoveSpeed: 8
+  _maxMoveSpeed: 15
   _acceleration: 50
   _deceleration: 25
   _jumpForce: 10
