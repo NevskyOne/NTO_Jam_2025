@@ -4,15 +4,16 @@ using Core.Interfaces;
 using UnityEngine.InputSystem;
 using Zenject;
 
-public class PlayerMovementLogic : IMovable
+public class PlayerMovementLogic : IMovable, ITickable
 {
-    private readonly MoveDataSO _moveData;
-    private readonly Rigidbody2D _rigidbody;
+    private MoveDataSO _moveData;
+    private Rigidbody2D _rigidbody;
     private bool _isGrounded;
     private int _jumpCount;
     private int _extraJumps;
     private float _dashCooldownTimer;
     private float _dashDurationTimer;
+    private float _moveInputX; // cached horizontal input
     
     public Vector2 LastDirection { get; private set; } = Vector2.right;
     public bool IsGrounded() => _isGrounded;
@@ -20,24 +21,33 @@ public class PlayerMovementLogic : IMovable
     private PlayerInput _input;
 
     [Inject]
-    private void Construct(Player player, PlayerInput input)
+    private void Construct(Player player, PlayerInput input, MoveDataSO moveData, [InjectOptional] Rigidbody2D rb)
     {
         _player = player;
         _input = input;
-        Debug.Log("const");
-        _input.actions["Move"].performed += ctx => Move(new Vector2(ctx.ReadValue<float>(), 0));
-        _input.actions["Move"].canceled += _ => _player.CameraTarget.localPosition = new Vector3(0,1,0);
+        _moveData = moveData;
+        _rigidbody = rb != null ? rb : player.GetComponent<Rigidbody2D>();
+
+        _input.actions["Move"].performed += ctx => { _moveInputX = ReadMove(ctx); };
+        _input.actions["Move"].canceled += _ => { _moveInputX = 0f; if (_player != null) _player.CameraTarget.localPosition = new Vector3(0,1,0); };
         _input.actions["Jump"].performed += _ => Jump();
         _input.actions["Shift"].performed += _ => Dash(LastDirection);
-    
     }
 
-    
-    public PlayerMovementLogic(MoveDataSO moveData, Rigidbody2D rigidbody)
+    private float ReadMove(InputAction.CallbackContext ctx)
     {
-        _moveData = moveData;
-        _rigidbody = rigidbody;
+        // Support both 1D and 2D bindings
+        if (ctx.valueType == typeof(float)) return ctx.ReadValue<float>();
+        if (ctx.valueType == typeof(Vector2)) return ctx.ReadValue<Vector2>().x;
+        return 0f;
     }
+
+    public void Tick()
+    {
+        Move(new Vector2(_moveInputX, 0));
+    }
+    
+    public PlayerMovementLogic() {}
     
     public void Move(Vector2 direction)
     {
@@ -89,10 +99,8 @@ public class PlayerMovementLogic : IMovable
         if (_dashCooldownTimer > 0) return;
         if (direction == Vector2.zero) direction = Vector2.right;
         
-        // Используем только данные из MoveDataSO
         Vector2 dashVelocity = direction.normalized * _moveData.DashForce;
         
-        // Сохраняем Y компонент скорости если падаем
         if (_rigidbody.linearVelocity.y < 0)
         {
             dashVelocity.y = _rigidbody.linearVelocity.y * 0.5f;
@@ -116,5 +124,4 @@ public class PlayerMovementLogic : IMovable
     {
         _extraJumps = Mathf.Max(0, extra);
     }
-    
 }

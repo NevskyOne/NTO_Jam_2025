@@ -55,7 +55,7 @@ public class ParryAttackLogic : IAttack
             if (hit.transform == _owner) continue;
             
             // Здесь может быть логика отражения снарядов или оглушения врагов
-            Debug.Log($"Parry detected: {hit.name}");
+            // debug log removed
         }
         
         _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());

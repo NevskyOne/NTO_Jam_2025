@@ -6,7 +6,8 @@ namespace Core.Interfaces
 
     public interface IAttack
     {
-        [field: SerializeReference] public AttackDataSO Data { get; set; }
+        // Serialization of Data is done in concrete classes (e.g., via [SerializeField] backing field)
+        public AttackDataSO Data { get; set; }
         public void Activate();
         public void Deactivate();
         

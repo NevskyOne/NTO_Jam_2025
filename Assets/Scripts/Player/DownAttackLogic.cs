@@ -56,7 +56,6 @@ public class DownAttackLogic : IAttack
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
 
         // Визуализация области атаки для тестирования (рисуем окружность через линии)
-        Debug.Log($"Drawing DownAttack circle at {attackCenter} with radius {radius}");
         DrawDebugCircle(attackCenter, radius, Color.blue, 1f);
 
         foreach (var col in hits)
@@ -72,7 +71,6 @@ public class DownAttackLogic : IAttack
             {
                 _hitObjects.Add(hittable);
                 hittable.TakeDamage(dmg);
-                Debug.Log($"DownAttack hit: {col.name} for {dmg} damage");
             }
         }
 

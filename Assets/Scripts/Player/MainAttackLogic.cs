@@ -24,6 +24,8 @@ public class MainAttackLogic : IAttack
     private Player _player;
     private PlayerInput _input;
     private Coroutine _cooldownRoutine;
+    private InputAction _cachedAction;
+    private System.Action<InputAction.CallbackContext> _onPerformed;
 
     [Inject]
     private void Construct(Player player, PlayerInput input)
@@ -35,32 +37,68 @@ public class MainAttackLogic : IAttack
 
     public void Activate()
     {
-        _input.actions[_data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
+        if (_player == null || _input == null || _owner == null)
+        {
+            Debug.LogError($"[{GetType().Name}] Missing DI references (Player/Input/Owner)");
+            return;
+        }
+        if (_input.actions == null)
+        {
+            Debug.LogError($"[{GetType().Name}] PlayerInput.actions is null (no InputActionAsset assigned)");
+            return;
+        }
+        if (_data == null)
+        {
+            Debug.LogError($"[{GetType().Name}] Data is null. Assign MainAttackData in PlayerDataSO.AttackSet.");
+            return;
+        }
+        string bindingName = string.IsNullOrEmpty(_data.InputBinding) ? "LeftMouse" : _data.InputBinding;
+        var asset = _input.actions;
+        var action = asset.FindAction(bindingName, false)
+                     ?? asset.FindAction($"Player/{bindingName}", false)
+                     ?? asset.FindAction($"Actions/{bindingName}", false)
+                     ?? asset.FindAction($"UI/{bindingName}", false);
+        if (action == null)
+        {
+            Debug.LogError($"[{GetType().Name}] Input action not found. Tried '{bindingName}' in maps [default, Player, Actions, UI]");
+            return;
+        }
+        if (_onPerformed == null)
+            _onPerformed = ctx => PerformAttack(_player != null ? _player.Movement.LastDirection : Vector2.right);
+        action.performed += _onPerformed;
+        _cachedAction = action;
     }
 
     public void Deactivate()
     {
-        _input.actions[_data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
+        if (_cachedAction != null && _onPerformed != null)
+        {
+            _cachedAction.performed -= _onPerformed;
+        }
+        _cachedAction = null;
+        _onPerformed = null;
     }
 
     public void PerformAttack(Vector2 direction)
     {
         if (_owner == null || _cooldownRoutine != null) return;
+        if (_data == null)
+        {
+            Debug.LogError($"[{GetType().Name}] Data is null. Assign MainAttackData in PlayerDataSO.AttackSet.");
+            return;
+        }
         
         _hitObjects.Clear();
         if (direction == Vector2.zero) direction = Vector2.right;
-
-        // Атака направлена вперед от игрока
+        
         float radius = _data.Radius;
         Vector2 attackCenter = (Vector2)_owner.position + direction.normalized * radius * _data.ForwardOffset;
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
-
-        // Единичная визуализация атаки
+        
         DrawDebugCircle(attackCenter, radius, Color.red, 0.5f);
 
         foreach (var col in hits)
         {
-            // Исключаем самого игрока из атаки
             if (col.transform == _owner) continue;
 
             var hittable = col.GetComponent<IHittable>();
@@ -68,7 +106,6 @@ public class MainAttackLogic : IAttack
             {
                 _hitObjects.Add(hittable);
                 hittable.TakeDamage(_data.BaseDamage);
-                Debug.Log($"MainAttack hit: {col.name} for {_data.BaseDamage} damage");
             }
         }
         

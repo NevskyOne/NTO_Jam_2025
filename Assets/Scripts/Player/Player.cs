@@ -17,16 +17,14 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     [SerializeField] private Transform _cameraTarget;
 
     public Transform CameraTarget => _cameraTarget;
-
-    // Данные игрока
+    
     private PlayerDataSO _playerData;
     private MoveDataSO _moveData;
-
-    // Input через Unity PlayerInput component
+    private DiContainer _container;
+    
     private PlayerInput _playerInput;
     private IMovable _movement;
-
-    // Состояния
+    
     public enum PlayerState { Idle, Moving, Jumping, Dashing, Attacking, Parrying }
     private PlayerState _state = PlayerState.Idle;
     
@@ -43,31 +41,37 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public Transform DialogueBubblePos => _dialogueBubblePos;
     public PlayerMovementLogic Movement => (PlayerMovementLogic)_movement;
 
-    private DiContainer _container;
+    
 
     [Header("Debug/Visuals")]
     [SerializeField] private bool _showAttackGizmos = true;
 
     [Inject]
-    private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input, DiContainer container)
+    private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input, PlayerMovementLogic movement, DiContainer container)
     {
         _playerData = playerData;
         _moveData = moveData;
-        _playerInput = input; // DI через Zenject
+        _playerInput = input; 
         _container = container;
         
-        _movement = new PlayerMovementLogic(_moveData, _rigidbody);
+        _movement = movement;
     }
 
     private void Awake()
     {
         _mainAttackSet = _playerData.AttackSet;
- 
-        // Отладка данных
+        if (_mainAttackSet != null && _container != null)
+        {
+            foreach (var attack in _mainAttackSet)
+            {
+                if (attack != null)
+                    _container.Inject(attack);
+            }
+        }
+        
         if (_moveData != null)
             Debug.Log($"MoveData: speed={_moveData.MoveSpeed}, accel={_moveData.Acceleration}, jumpForce={_moveData.JumpForce}");
- 
-        // Инициализация здоровья (если не загружено сохранение)
+        
         if (_playerData != null)
         {
             if (_data.Health <= 0 || _data.Health > _playerData.MaxHealth)
@@ -88,7 +92,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     {
         if (_groundChecker != null)
             _groundChecker.GroundStateChanged += OnGroundChanged;
-        // Активируем основные атаки игрока, чтобы вернулась логика ударов
+     
         if (_mainAttackSet != null)
         {
             foreach (var attack in _mainAttackSet)
@@ -106,7 +110,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     {
         if (_groundChecker != null)
             _groundChecker.GroundStateChanged -= OnGroundChanged;
-        // Деактивируем основные атаки
+      
         if (_mainAttackSet != null)
         {
             foreach (var attack in _mainAttackSet)
@@ -152,8 +156,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         (_abilitiesSet[fromSlot], _abilitiesSet[toSlot]) = (_abilitiesSet[toSlot], _abilitiesSet[fromSlot]);
     }
     
-
-    // Слоты способностей
+    
     public void UseFood(int slot)
     {
         if (_abilitiesSet == null || slot < 0 || slot >= _abilitiesSet.Count || _abilitiesSet[slot] == null) return;
@@ -183,8 +186,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         data.Deactivate();
         dataToActivate.Activate();
     }
-
-    // Управление эффектами
+    
     public void AddEffect(EffectBase effectBase)
     {
         if (effectBase != null && !_activeEffects.Contains(effectBase))
@@ -227,8 +229,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         int newHp = _data.Health + Mathf.CeilToInt(amount);
         _data.Health = Mathf.Clamp(newHp, 0, _playerData != null ? _playerData.MaxHealth : 100);
     }
-
-    // Input handlers for food hotkeys (so we can unsubscribe correctly)
+    
     private void OnFood1(InputAction.CallbackContext ctx) => UseFood(0);
     private void OnFood2(InputAction.CallbackContext ctx) => UseFood(1);
     private void OnFood3(InputAction.CallbackContext ctx) => UseFood(2);
@@ -236,7 +237,6 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private void OnDrawGizmosSelected()
     {
         if (!_showAttackGizmos) return;
-        // Берём список атак: в рантайме — _mainAttackSet, в редакторе — из _playerData (если есть)
         var attacks = _mainAttackSet ?? _playerData?.AttackSet;
         if (attacks == null) return;
 
@@ -251,8 +251,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         foreach (var attack in attacks)
         {
             if (attack == null || attack.Data == null) continue;
-
-            // Вперёд (ЛКМ) — MainAttackLogic с MainAttackData
+            
             if (attack is MainAttackLogic)
             {
                 var data = attack.Data as Core.Data.ScriptableObjects.MainAttackData;
@@ -263,8 +262,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
                 Gizmos.DrawWireSphere(center, radius);
                 continue;
             }
-
-            // Вниз (S) — DownAttackLogic с MainAttackData
+            
             if (attack is DownAttackLogic)
             {
                 var data = attack.Data as Core.Data.ScriptableObjects.MainAttackData;
@@ -275,8 +273,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
                 Gizmos.DrawWireSphere(center, radius);
                 continue;
             }
-
-            // Парирование (ПКМ) — ParryAttackLogic с ParryAttackData
+            
             if (attack is ParryAttackLogic)
             {
                 var data = attack.Data as Core.Data.ScriptableObjects.ParryAttackData;
@@ -287,4 +284,5 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             }
         }
     }
+    
 }
