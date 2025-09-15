@@ -6,7 +6,7 @@ namespace Core.Interfaces
 
     public interface IAttack
     {
-        public AttackDataSO Data { get; set; }
+        [field: SerializeReference] public AttackDataSO Data { get; set; }
         public void Activate();
         public void Deactivate();
         

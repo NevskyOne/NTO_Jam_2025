@@ -43,6 +43,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "MousePosition",
+                    "type": "Value",
+                    "id": "4398824f-3423-4c01-b209-3be5720b8952",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Shift",
                     "type": "Button",
                     "id": "c5eb8d1d-d087-46bc-8f01-16258b3c0972",
@@ -70,7 +79,7 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "DownAttack",
+                    "name": "S",
                     "type": "Button",
                     "id": "b3ee457b-a40d-4936-a596-ef05ff04ae66",
                     "expectedControlType": "",
@@ -104,6 +113,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Escape",
+                    "type": "Button",
+                    "id": "484ce8c8-8add-451d-99e3-ce23753403a5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -213,7 +231,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "DownAttack",
+                    "action": "S",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -247,6 +265,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cc0b7648-626d-441f-851a-698f6db80cf8",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Escape",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "87e4e593-fbb7-4d61-870f-76ce4bd32796",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "MousePosition",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

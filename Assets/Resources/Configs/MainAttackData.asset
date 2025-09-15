@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d922c6344616447d98f8c531ebae8b58, type: 3}
-  m_Name: DownAttackData
+  m_Name: MainAttackData
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.MainAttackData
-  <InputBinding>k__BackingField: 
-  <BaseDamage>k__BackingField: 0
+  <InputBinding>k__BackingField: LeftMouse
+  <BaseDamage>k__BackingField: 1
   <Radius>k__BackingField: 1.5
   <ForwardOffset>k__BackingField: 0.7
   <AttackCooldown>k__BackingField: 0.8

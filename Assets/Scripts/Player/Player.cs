@@ -55,44 +55,13 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         _moveData = moveData;
         _playerInput = input; // DI через Zenject
         _container = container;
+        
+        _movement = new PlayerMovementLogic(_moveData, _rigidbody);
     }
 
     private void Awake()
     {
-        // _playerInput приходит из DI, оставляем фолбэк на случай отсутствия компонента
-        if (_playerInput == null)
-        {
-            _playerInput = GetComponent<PlayerInput>();
-            if (_playerInput == null)
-                Debug.LogError("Player: Unity PlayerInput component is missing. Please add PlayerInput to the Player GameObject.");
-        }
-        if (_moveData == null)
-        {
-            Debug.LogError("Player: MoveDataSO is null. Assign it in GameplayInstaller.");
-        }
-        else
-        {
-            _movement = new PlayerMovementLogic(_moveData, _rigidbody);
-            // Подключаем события ввода к логике движения
-            Movement.Initialize(this, _playerInput);
-        }
-        if (_playerData == null)
-        {
-            Debug.LogError("Player: PlayerDataSO is null. Assign it in GameplayInstaller.");
-        }
-        else
-        {
-            _mainAttackSet = _playerData.AttackSet;
-            // ВАЖНО: инъекция зависимостей в объекты атак (Player, PlayerInput и т.д.)
-            if (_container != null && _mainAttackSet != null)
-            {
-                foreach (var attack in _mainAttackSet)
-                {
-                    if (attack != null)
-                        _container.Inject(attack);
-                }
-            }
-        }
+        _mainAttackSet = _playerData.AttackSet;
  
         // Отладка данных
         if (_moveData != null)
@@ -105,20 +74,6 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
                 _data.Health = _playerData.MaxHealth;
         }
 
-        // Принудительно включаем карту действий Player (если активна не она)
-        if (_playerInput != null)
-        {
-            var mapName = _playerInput.currentActionMap != null ? _playerInput.currentActionMap.name : "(null)";
-            Debug.Log($"PlayerInput current map: {mapName}");
-            if (_playerInput.currentActionMap == null || _playerInput.currentActionMap.name != "Player")
-            {
-                _playerInput.SwitchCurrentActionMap("Player");
-                Debug.Log("PlayerInput: switched current action map to 'Player'");
-            }
-        }
-
-        // Диагностика AttackSet
-        Debug.Log($"AttackSet count: {_mainAttackSet?.Count ?? -1}");
         if (_mainAttackSet != null)
         {
             for (int i = 0; i < _mainAttackSet.Count; i++)
@@ -164,16 +119,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             _playerInput.actions["3"].performed -= OnFood3;
         }
     }
-
-    private void FixedUpdate()
-    {
-        if (_playerInput == null) return;
-        float x = 0f;
-        var moveAction = _playerInput.actions["Move"];
-        if (moveAction != null)
-            x = moveAction.ReadValue<float>(); // 1D Axis (A/D)
-        Movement.Move(new Vector2(x, 0f));
-    }
+    
 
     private void OnGroundChanged(bool grounded)
     {

@@ -10,8 +10,14 @@ using Zenject;
 [Serializable]
 public class MainAttackLogic : IAttack
 {
-    [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
-    private MainAttackData Data => (MainAttackData)((IAttack)this).Data;
+    [SerializeField] private MainAttackData _data;
+
+    AttackDataSO IAttack.Data
+    {
+        get => _data;
+        set => _data = (MainAttackData)value;
+    }
+    
     
     private Transform _owner;
     private readonly List<IHittable> _hitObjects = new();
@@ -29,12 +35,12 @@ public class MainAttackLogic : IAttack
 
     public void Activate()
     {
-        _input.actions[Data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
+        _input.actions[_data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void Deactivate()
     {
-        _input.actions[Data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
+        _input.actions[_data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void PerformAttack(Vector2 direction)
@@ -45,8 +51,8 @@ public class MainAttackLogic : IAttack
         if (direction == Vector2.zero) direction = Vector2.right;
 
         // Атака направлена вперед от игрока
-        float radius = Data.Radius;
-        Vector2 attackCenter = (Vector2)_owner.position + direction.normalized * radius * Data.ForwardOffset;
+        float radius = _data.Radius;
+        Vector2 attackCenter = (Vector2)_owner.position + direction.normalized * radius * _data.ForwardOffset;
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
 
         // Единичная визуализация атаки
@@ -61,8 +67,8 @@ public class MainAttackLogic : IAttack
             if (hittable != null && !_hitObjects.Contains(hittable))
             {
                 _hitObjects.Add(hittable);
-                hittable.TakeDamage(Data.BaseDamage);
-                Debug.Log($"MainAttack hit: {col.name} for {Data.BaseDamage} damage");
+                hittable.TakeDamage(_data.BaseDamage);
+                Debug.Log($"MainAttack hit: {col.name} for {_data.BaseDamage} damage");
             }
         }
         
@@ -71,7 +77,7 @@ public class MainAttackLogic : IAttack
 
     private IEnumerator CooldownRoutine()
     {
-        yield return new WaitForSeconds(Data.AttackCooldown);
+        yield return new WaitForSeconds(_data.AttackCooldown);
         _cooldownRoutine = null;
     }
 

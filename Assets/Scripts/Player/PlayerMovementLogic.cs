@@ -2,6 +2,7 @@ using UnityEngine;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using UnityEngine.InputSystem;
+using Zenject;
 
 public class PlayerMovementLogic : IMovable
 {
@@ -18,19 +19,19 @@ public class PlayerMovementLogic : IMovable
     private Player _player;
     private PlayerInput _input;
 
-    // Инициализация без Zenject (получаем ссылки из Player)
-    public void Initialize(Player player, PlayerInput input)
+    [Inject]
+    private void Construct(Player player, PlayerInput input)
     {
         _player = player;
         _input = input;
-        if (_input != null)
-        {
-            _input.actions["Move"].performed += ctx => Move(new Vector2(ctx.ReadValue<float>(), 0));
-            _input.actions["Move"].canceled += _ => _player.CameraTarget.localPosition = new Vector3(0,1,0);
-            _input.actions["Jump"].performed += _ => Jump();
-            _input.actions["Shift"].performed += _ => Dash(LastDirection);
-        }
+        Debug.Log("const");
+        _input.actions["Move"].performed += ctx => Move(new Vector2(ctx.ReadValue<float>(), 0));
+        _input.actions["Move"].canceled += _ => _player.CameraTarget.localPosition = new Vector3(0,1,0);
+        _input.actions["Jump"].performed += _ => Jump();
+        _input.actions["Shift"].performed += _ => Dash(LastDirection);
+    
     }
+
     
     public PlayerMovementLogic(MoveDataSO moveData, Rigidbody2D rigidbody)
     {
@@ -41,10 +42,7 @@ public class PlayerMovementLogic : IMovable
     public void Move(Vector2 direction)
     {
         if (_rigidbody == null) return;
-        if (_player != null && (
-            _player.State == Player.PlayerState.Attacking ||
-            _player.State == Player.PlayerState.Parrying ||
-            _player.State == Player.PlayerState.Dashing))
+        if (_player != null && _player.State is Player.PlayerState.Attacking or Player.PlayerState.Parrying or Player.PlayerState.Dashing)
         {
             return;
         }

@@ -10,8 +10,13 @@ using Zenject;
 [Serializable]
 public class DownAttackLogic : IAttack
 {
-    [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
-    private MainAttackData Data => (MainAttackData)((IAttack)this).Data;
+    [SerializeField] private MainAttackData _data;
+
+    AttackDataSO IAttack.Data
+    {
+        get => _data;
+        set => _data = (MainAttackData)value;
+    }
     
     private Transform _owner;
     private readonly List<IHittable> _hitObjects = new();
@@ -29,12 +34,12 @@ public class DownAttackLogic : IAttack
 
     public void Activate()
     {
-        _input.actions[Data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
+        _input.actions[_data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void Deactivate()
     {
-        _input.actions[Data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
+        _input.actions[_data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void PerformAttack(Vector2 direction)
@@ -43,11 +48,11 @@ public class DownAttackLogic : IAttack
         _hitObjects.Clear();
 
         Vector2 dir = Vector2.down;
-        float radius = Data.Radius;
-        int dmg = Data.BaseDamage;
+        float radius = _data.Radius;
+        int dmg = _data.BaseDamage;
 
         // Смещаем область атаки вниз от игрока
-        Vector2 attackCenter = (Vector2)_owner.position + Vector2.down * radius * Data.ForwardOffset;
+        Vector2 attackCenter = (Vector2)_owner.position + Vector2.down * radius * _data.ForwardOffset;
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
 
         // Визуализация области атаки для тестирования (рисуем окружность через линии)
@@ -76,7 +81,7 @@ public class DownAttackLogic : IAttack
 
     private IEnumerator CooldownRoutine()
     {
-        yield return new WaitForSeconds(Data.AttackCooldown);
+        yield return new WaitForSeconds(_data.AttackCooldown);
         _cooldownRoutine = null;
     }
 

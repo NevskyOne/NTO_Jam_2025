@@ -9,8 +9,13 @@ using Zenject;
 [Serializable]
 public class ParryAttackLogic : IAttack
 {
-    [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
-    private ParryAttackData Data => (ParryAttackData)((IAttack)this).Data;
+    [SerializeField] private ParryAttackData _data;
+
+    AttackDataSO IAttack.Data
+    {
+        get => _data;
+        set => _data = (ParryAttackData)value;
+    }
     
     private Transform _owner;
     private Player _player;
@@ -27,19 +32,19 @@ public class ParryAttackLogic : IAttack
 
     public void Activate()
     {
-        _input.actions[Data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
+        _input.actions[_data.InputBinding].performed += _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void Deactivate()
     {
-        _input.actions[Data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
+        _input.actions[_data.InputBinding].performed -= _ => PerformAttack(_player.Movement.LastDirection);
     }
 
     public void PerformAttack(Vector2 direction)
     {
         if (_owner == null || _cooldownRoutine != null) return;
         // Логика парирования - создаем защитную область вокруг игрока
-        float radius = Data.Radius;
+        float radius = _data.Radius;
         Collider2D[] hits = Physics2D.OverlapCircleAll(_owner.position, radius);
         
         // Единичная визуализация парирования
@@ -58,7 +63,7 @@ public class ParryAttackLogic : IAttack
 
     private IEnumerator CooldownRoutine()
     {
-        yield return new WaitForSeconds(Data.AttackCooldown);
+        yield return new WaitForSeconds(_data.AttackCooldown);
         _cooldownRoutine = null;
     }
 

@@ -13,13 +13,24 @@ MonoBehaviour:
   m_Name: PlayerData
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.PlayerDataSO
   _attackSet:
-  - rid: 5469746317627490559
+  - rid: 5469746339609313535
+  - rid: 5469746339609313536
+  - rid: 5469746339609313537
   _maxHealth: 3
   _startMoney: 0
   _startReputation: 0
   references:
     version: 2
     RefIds:
-    - rid: 5469746317627490559
+    - rid: 5469746339609313535
       type: {class: MainAttackLogic, ns: , asm: Assembly-CSharp}
-      data: 
+      data:
+        _data: {fileID: 11400000, guid: 8ae15e9deede62b4ababd785f2c96c57, type: 2}
+    - rid: 5469746339609313536
+      type: {class: DownAttackLogic, ns: , asm: Assembly-CSharp}
+      data:
+        _data: {fileID: 11400000, guid: e4074c570b706b14693a2bec906e4be4, type: 2}
+    - rid: 5469746339609313537
+      type: {class: ParryAttackLogic, ns: , asm: Assembly-CSharp}
+      data:
+        _data: {fileID: 11400000, guid: 84c26a53e7979a74b9f73965cde65a02, type: 2}
