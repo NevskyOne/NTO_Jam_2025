@@ -30,6 +30,11 @@ namespace Abilities.Food
         public void Activate()
         {
             if (_input == null) return;
+            if (((IAttack)this).Data == null)
+            {
+                Debug.LogError("[RatatouilleAbility] Data is null");
+                return;
+            }
             _input.actions[Data.InputBinding].performed += OnPerformed;
             if (_player != null)
             {
@@ -40,9 +45,9 @@ namespace Abilities.Food
 
         public void Deactivate()
         {
-            if (_input != null)
+            if (_input != null && ((IAttack)this).Data != null)
                 _input.actions[Data.InputBinding].performed -= OnPerformed;
-            if (_player != null)
+            if (_player != null && ((IAttack)this).Data != null)
             {
                 foreach (var eff in Data.ApplyOnSelf)
                     _player.RemoveEffect(eff);
@@ -94,10 +99,8 @@ namespace Abilities.Food
 
         private bool HasGreaseEffect(GameObject target)
         {
-            // Проверяем наличие эффекта жирности
-            return target.CompareTag("Greasy") || 
-                   target.name.Contains("Grease") || 
-                   target.name.Contains("Burger");
+            var runner = target.GetComponent<Core.Interfaces.EffectRunner>();
+            return runner != null && runner.HasEffectByName("Grease");
         }
 
         private IEnumerator CooldownRoutine()
