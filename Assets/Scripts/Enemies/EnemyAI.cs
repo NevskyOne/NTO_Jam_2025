@@ -1,60 +1,34 @@
+using System.Collections.Generic;
+using Core.Data.ScriptableObjects;
+using Core.Interfaces;
 using UnityEngine;
 
-[RequireComponent(typeof(EnemyBase))]
-[RequireComponent(typeof(EnemyAttack))]
-public class EnemyAI : MonoBehaviour
-{
-    [Header("Distances")]
-    [SerializeField] private float attackDistance = 1.0f; // дистанция, на которой начинаем атаку
-    [Header("Combat")]
-    [SerializeField] private float attackCooldown = 0.75f; // сек между ударами
+public class EnemyAI : MonoBehaviour, IHittable, IEffectHandler {
+    [SerializeField] private EnemyDataSO _data;
+    [SerializeField] private PlayerCheckSystem _playerCheck;
 
-    private EnemyBase _enemyBase;
-    private EnemyAttack _enemyAttack;
-    private Transform _player;
-    private float _attackTimer;
+    private List<EffectBase> _activeEffects;
+    private EnemyState _state;
 
-    private void Awake()
-    {
-        _enemyBase = GetComponent<EnemyBase>();
-        _enemyAttack = GetComponent<EnemyAttack>();
+    public void OnEnable(){
+        //_playerCheck.[любые события по типу PlayerDetected] +=  выбираем атаку или меняем состояние
     }
 
-    private void TryFindPlayer()
-    {
-        var go = GameObject.FindGameObjectWithTag("Player");
-        if (go != null)
-            _player = go.transform;
+    public void OnDisable(){
+        //отписка
     }
 
-    private void FixedUpdate()
-    {
-        if (_attackTimer > 0f)
-            _attackTimer -= Time.fixedDeltaTime;
+    public void ChangeState(EnemyState state){}
 
-        if (_player == null)
-            TryFindPlayer();
-        if (_player == null)
-            return;
+    public void AttackChoise(){}
 
-        float dx = _player.position.x - transform.position.x;
-        float absDx = Mathf.Abs(dx);
+    public void AddEffect(EffectBase effect){}
 
-        if (absDx > attackDistance)
-        {
-            // Двигаемся по X в сторону игрока
-            Vector2 dir = new Vector2(Mathf.Sign(dx), 0f);
-            _enemyBase.Move(dir);
-        }
-        else
-        {
-            // Останавливаемся и атакуем по кулдауну
-            _enemyBase.Move(Vector2.zero);
-            if (_attackTimer <= 0f)
-            {
-                _enemyAttack.Attack();
-                _attackTimer = attackCooldown;
-            }
-        }
-    }
+    public void RemoveEffect(EffectBase effect){}
+
+    public void TakeDamage(int amount){}
+
+    public void Die(){}
 }
+
+public enum EnemyState{ Normal, Attack }

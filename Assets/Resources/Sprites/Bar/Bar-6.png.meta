@@ -5,6 +5,27 @@ TextureImporter:
   - first:
       213: -6918126182098706642
     second: Bar-6_0
+  - first:
+      213: 8694830295861398368
+    second: Bar-6_1
+  - first:
+      213: -6690109468178831667
+    second: Bar-6_2
+  - first:
+      213: 7474521684597086422
+    second: Bar-6_3
+  - first:
+      213: 6654007426835069837
+    second: Bar-6_4
+  - first:
+      213: -6255886366396657629
+    second: Bar-6_5
+  - first:
+      213: -6861932393678154920
+    second: Bar-6_6
+  - first:
+      213: -5500118643070904593
+    second: Bar-6_7
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +93,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -103,10 +124,10 @@ TextureImporter:
       name: Bar-6_0
       rect:
         serializedVersion: 2
-        x: 37
-        y: 19
-        width: 55
-        height: 34
+        x: 47
+        y: 84
+        width: 35
+        height: 46
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -117,6 +138,160 @@ TextureImporter:
       bones: []
       spriteID: e2f5da424e0edff90800000000000000
       internalID: -6918126182098706642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_1
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 84
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 06b8f1f361e3aa870800000000000000
+      internalID: 8694830295861398368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_2
+      rect:
+        serializedVersion: 2
+        x: 431
+        y: 84
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc629b862e4f723a0800000000000000
+      internalID: -6690109468178831667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_3
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 12
+        width: 21
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d81d54ded5dab760800000000000000
+      internalID: 7474521684597086422
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_4
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 10
+        width: 75
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d8bb0511088c75c50800000000000000
+      internalID: 6654007426835069837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_5
+      rect:
+        serializedVersion: 2
+        x: 339
+        y: 16
+        width: 82
+        height: 65
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 320d7bfae70ae29a0800000000000000
+      internalID: -6255886366396657629
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_6
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 15
+        width: 21
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 853511218d485c0a0800000000000000
+      internalID: -6861932393678154920
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-6_7
+      rect:
+        serializedVersion: 2
+        x: 435
+        y: 13
+        width: 75
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe651492c37aba3b0800000000000000
+      internalID: -5500118643070904593
       vertices: []
       indices: 
       edges: []
@@ -136,6 +311,13 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Bar-6_0: -6918126182098706642
+      Bar-6_1: 8694830295861398368
+      Bar-6_2: -6690109468178831667
+      Bar-6_3: 7474521684597086422
+      Bar-6_4: 6654007426835069837
+      Bar-6_5: -6255886366396657629
+      Bar-6_6: -6861932393678154920
+      Bar-6_7: -5500118643070904593
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

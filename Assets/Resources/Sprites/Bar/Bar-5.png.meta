@@ -5,6 +5,9 @@ TextureImporter:
   - first:
       213: 533563045366639241
     second: Bar-5_0
+  - first:
+      213: 6821893026495347555
+    second: Bar-5_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +75,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -103,10 +106,10 @@ TextureImporter:
       name: Bar-5_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 650
-        height: 54
+        x: 458
+        y: 55
+        width: 77
+        height: 45
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -117,6 +120,28 @@ TextureImporter:
       bones: []
       spriteID: 98aaa5843c8976700800000000000000
       internalID: 533563045366639241
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-5_1
+      rect:
+        serializedVersion: 2
+        x: 578
+        y: 22
+        width: 58
+        height: 75
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36b38fb409b3cae50800000000000000
+      internalID: 6821893026495347555
       vertices: []
       indices: 
       edges: []
@@ -136,6 +161,7 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Bar-5_0: 533563045366639241
+      Bar-5_1: 6821893026495347555
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

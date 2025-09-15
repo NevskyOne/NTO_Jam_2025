@@ -5,6 +5,12 @@ TextureImporter:
   - first:
       213: 3063996085864823708
     second: Bar-4_0
+  - first:
+      213: -6059390188357462437
+    second: Bar-4_1
+  - first:
+      213: 3097583530832508739
+    second: Bar-4_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +78,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -103,10 +109,10 @@ TextureImporter:
       name: Bar-4_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 13
-        width: 167
-        height: 117
+        x: 201
+        y: 5
+        width: 26
+        height: 41
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -117,6 +123,50 @@ TextureImporter:
       bones: []
       spriteID: c9bf823d430858a20800000000000000
       internalID: 3063996085864823708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-4_1
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 5
+        width: 26
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b56577b4ab8b8eba0800000000000000
+      internalID: -6059390188357462437
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bar-4_2
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 5
+        width: 26
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3473f514fc3dcfa20800000000000000
+      internalID: 3097583530832508739
       vertices: []
       indices: 
       edges: []
@@ -136,6 +186,8 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Bar-4_0: 3063996085864823708
+      Bar-4_1: -6059390188357462437
+      Bar-4_2: 3097583530832508739
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
