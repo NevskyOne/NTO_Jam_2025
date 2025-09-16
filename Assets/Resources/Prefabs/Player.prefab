@@ -121,7 +121,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -7.74, y: -0.92, z: 0}
-  m_LocalScale: {x: 1, y: 2.47, z: 1.6}
+  m_LocalScale: {x: 1, y: 2.14, z: 1.6}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2809363975004828646}
@@ -213,6 +213,7 @@ MonoBehaviour:
   _interactableTrigger: {fileID: 7977716477661296476}
   _dialogueBubblePos: {fileID: 2227079017957132205}
   _cameraTarget: {fileID: 4055795901690513028}
+  _shadowCaster: {fileID: 7505730406588101365}
   _showAttackGizmos: 1
 --- !u!81 &4082936233981529464
 AudioListener:

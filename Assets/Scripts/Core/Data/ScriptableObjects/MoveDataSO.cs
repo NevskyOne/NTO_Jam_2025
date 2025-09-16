@@ -15,6 +15,7 @@ namespace Core.Data.ScriptableObjects
         [SerializeField] private float _jumpForce = 12f;
         [SerializeField] private float _maxJumpHeight = 3f;
         [SerializeField] private float _jumpTimeThreshold = 0.25f;
+        [SerializeField] private float _normalGravity = 9.8f;
         [SerializeField] private float _fallMultiplier = 2.5f;
         
         [Header("Деш")]
@@ -33,6 +34,7 @@ namespace Core.Data.ScriptableObjects
         public float JumpForce => _jumpForce;
         public float MaxJumpHeight => _maxJumpHeight;
         public float JumpTimeThreshold => _jumpTimeThreshold;
+        public float NormalGravity => _normalGravity;
         public float FallMultiplier => _fallMultiplier;
         public float DashForce => _dashForce;
         public float DashDuration => _dashDuration;

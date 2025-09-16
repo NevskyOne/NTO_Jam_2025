@@ -32,7 +32,16 @@ public class DialogueStartSystem : MonoBehaviour
     {
         _playerTf = player.DialogueBubblePos;
         _playerInput = input;
+    }
+
+    private void OnEnable()
+    {
         _action.action.performed += OnEndLine;
+    }
+    
+    private void OnDisable()
+    {
+        _action.action.performed -= OnEndLine;
     }
     
     

@@ -81,7 +81,7 @@ public class PlayerMovementLogic : IMovable, ITickable
         float newVelocityX = Mathf.MoveTowards(velocity.x, targetSpeedX, acceleration);
         
         _rigidbody.linearVelocity = new Vector2(newVelocityX, velocity.y);
-        _rigidbody.gravityScale = velocity.y < 0 ? _moveData.FallMultiplier : 1f;
+        _rigidbody.gravityScale = velocity.y < 0 ? _moveData.FallMultiplier : _moveData.NormalGravity;
     }
     
     public void Jump()
