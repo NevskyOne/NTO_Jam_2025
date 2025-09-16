@@ -3,6 +3,7 @@ using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using UnityEngine;
 
+[CreateAssetMenu(fileName = "FoodData", menuName = "Game Data/Food Data")]
 public class FoodData : AttackDataSO
 {
     [field: SerializeField] public int Duration { get; private set; } = 5;

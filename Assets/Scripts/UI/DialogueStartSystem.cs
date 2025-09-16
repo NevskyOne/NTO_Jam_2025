@@ -13,6 +13,7 @@ public class DialogueStartSystem : MonoBehaviour
     [SerializeField] private float _offset;
     [Header("Parameter")]
     [SerializeField] private BubbleUI _bubble;
+    [SerializeField] private Transform _optionsObj;
     [SerializeField] private TMP_Text _name;
     [SerializeField] private Image _dialogBack;
     [SerializeField] private Sprite _npcBackSprite;
@@ -65,18 +66,27 @@ public class DialogueStartSystem : MonoBehaviour
         _playerInput.SwitchCurrentActionMap(_actionMapToSwitch);
     }
 
-    private async void OnEndLine(InputAction.CallbackContext callbackContext)
+    public async void OnEndLine(InputAction.CallbackContext ctx)
     {
-        await Task.Delay(5);
-        if (_lastName == _name.text) return;
-        print(_lastName + _name.text);
-        
-        _dialogBack.sprite = _name.text == "Player" ? _playerBackSprite : _npcBackSprite;
-        
-        _bubble.MoveToTarget(_name.text == "Player" ? _playerTf : _characterTf);
-        _bubble.SwapBubble();
-        
-        _lastName = _name.text;
+        await Task.Delay(10);
+        var childActive = ctx.ToString() != new InputAction.CallbackContext().ToString() && (_optionsObj.childCount > 1 && _optionsObj.GetChild(1).gameObject.activeSelf);
+        print(childActive + " _lastName: " + _lastName + " _name.text:" + _name.text);
+        if (_lastName == _name.text && (_optionsObj.childCount < 2 || !childActive)) {return;}
+        else if (_lastName != _name.text && !childActive)
+        {
+            _dialogBack.sprite = _name.text == "Player" ? _playerBackSprite : _npcBackSprite;
+
+            _bubble.MoveToTarget(_name.text == "Player" ? _playerTf : _characterTf);
+            _bubble.SwapBubble();
+
+            _lastName = _name.text;
+        }
+        else
+        {
+            _bubble.MoveToTarget(_playerTf);
+            if(_lastName != "Player") _bubble.SwapBubble();
+            _lastName = "";
+        }
     }
 
     public void EndDialogue()

@@ -11,8 +11,13 @@ namespace Abilities.Food
     [Serializable]
     public class DumplingAbility : IAttack
     {
-        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
-        private FoodData Data => (FoodData)((IAttack)this).Data;
+        [SerializeField] private FoodData _data;
+
+        AttackDataSO IAttack.Data
+        {
+            get => _data;
+            set => _data = (FoodData)value;
+        }
 
         private Transform _owner;
         private Player _player;
@@ -30,10 +35,10 @@ namespace Abilities.Food
         public void Activate()
         {
             if (_input == null) return;
-            _input.actions[Data.InputBinding].performed += OnPerformed;
+            _input.actions[_data.InputBinding].performed += OnPerformed;
             if (_player != null)
             {
-                foreach (var eff in Data.ApplyOnSelf)
+                foreach (var eff in _data.ApplyOnSelf)
                     _player.AddEffect(eff);
             }
         }
@@ -41,10 +46,10 @@ namespace Abilities.Food
         public void Deactivate()
         {
             if (_input != null)
-                _input.actions[Data.InputBinding].performed -= OnPerformed;
+                _input.actions[_data.InputBinding].performed -= OnPerformed;
             if (_player != null)
             {
-                foreach (var eff in Data.ApplyOnSelf)
+                foreach (var eff in _data.ApplyOnSelf)
                     _player.RemoveEffect(eff);
             }
         }
@@ -59,8 +64,8 @@ namespace Abilities.Food
         {
             if (_owner == null || _cooldownRoutine != null) return;
 
-            Vector2 center = (Vector2)_owner.position + direction.normalized * Data.Radius * Data.ForwardOffset;
-            float radius = Data.Radius;
+            Vector2 center = (Vector2)_owner.position + direction.normalized * _data.Radius * _data.ForwardOffset;
+            float radius = _data.Radius;
             var hits = Physics2D.OverlapCircleAll(center, radius);
 
             foreach (var col in hits)
@@ -69,8 +74,8 @@ namespace Abilities.Food
                 var h = col.GetComponent<IHittable>();
                 if (h != null)
                 {
-                    h.TakeDamage(Data.BaseDamage);
-                    foreach (var eff in Data.ApplyOnTargets)
+                    h.TakeDamage(_data.BaseDamage);
+                    foreach (var eff in _data.ApplyOnTargets)
                         eff.ApplyEffect(col.gameObject);
                 }
             }
@@ -81,7 +86,7 @@ namespace Abilities.Food
 
         private IEnumerator CooldownRoutine()
         {
-            yield return new WaitForSeconds(Data.AttackCooldown);
+            yield return new WaitForSeconds(_data.AttackCooldown);
             _cooldownRoutine = null;
         }
 

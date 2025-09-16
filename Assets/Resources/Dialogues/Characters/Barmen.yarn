@@ -36,9 +36,9 @@ Barmen: Здорова, приятель! Хочешь сделать заказ
 Barmen: Хочешь сделать заказ или просто поболтать? <<if $firstADay == false>>
 <<set $firstADay = false>>
 -> Player: Хочу купить еду у тебя.
-    <<OpenShop ShopUI>>
+    <<OpenShop MainUI true>>
 -> Player: Как у тебя дела сегодня?
-    <<jump Feelings>>
+    <<jump Barmen_Feelings>>
 ===
 
 title: Barmen_Feelings

@@ -162,6 +162,7 @@ GameObject:
   - component: {fileID: 2576261519635394348}
   - component: {fileID: 5304106805916645415}
   - component: {fileID: 2576261519635394347}
+  - component: {fileID: 7547001289564069873}
   m_Layer: 5
   m_Name: Option Item
   m_TagString: Untagged
@@ -221,7 +222,7 @@ MonoBehaviour:
   m_text: Option Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 096e4398619e0f44ba11dffb0cd640ec, type: 2}
-  m_sharedMaterial: {fileID: -1195433610958810735, guid: 0053ef58db438e84f840e45bb75a946e, type: 2}
+  m_sharedMaterial: {fileID: -1253027377643021852, guid: 096e4398619e0f44ba11dffb0cd640ec, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -342,3 +343,15 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 4de89c03b6297472d82b0d925ee6fcd3, type: 3}
     colour: {r: 0.5, g: 0.5, b: 0.5, a: 0.5019608}
   disabledStrikeThrough: 1
+--- !u!114 &7547001289564069873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8135782471263027723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22810facfd0c4d6d959303063853427f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClickChecker

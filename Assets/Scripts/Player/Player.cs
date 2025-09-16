@@ -5,8 +5,8 @@ using Zenject;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering.Universal;
 
-[RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 {
     [Header("Components")]
@@ -16,7 +16,9 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     [SerializeField] private InteractableTrigger _interactableTrigger;
     [SerializeField] private Transform _dialogueBubblePos;
     [SerializeField] private Transform _cameraTarget;
-
+    [SerializeField] private ShadowCaster2D _shadowCaster;
+    
+    public ShadowCaster2D ShadowCaster => _shadowCaster;
     public Transform CameraTarget => _cameraTarget;
     
     private PlayerDataSO _playerData;
@@ -35,7 +37,8 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 
     private Coroutine _foodDeactivationRoutine;
     
-    private CurrentPlayerData _data;
+    private CurrentPlayerData _data = new CurrentPlayerData();
+    private int _currentPills;
 
     private IInteractable _currentInteractable;
     public PlayerState State => _state;
@@ -49,11 +52,12 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     [Inject]
     private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input, PlayerMovementLogic movement, DiContainer container)
     {
+        
         _playerData = playerData;
         _moveData = moveData;
         _playerInput = input; 
         _container = container;
-        
+
         _movement = movement;
     }
 
@@ -107,6 +111,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             _playerInput.actions["2"].performed += OnFood2;
             _playerInput.actions["3"].performed += OnFood3;
             _playerInput.actions["E"].performed += InteractWith;
+            _playerInput.actions["H"].performed += _ => Heal(1);
         }
     }
 
@@ -128,6 +133,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             _playerInput.actions["2"].performed -= OnFood2;
             _playerInput.actions["3"].performed -= OnFood3;
             _playerInput.actions["E"].performed -= InteractWith;
+            _playerInput.actions["H"].performed -= _ => Heal(1);
         }
     }
 
@@ -235,10 +241,14 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         return true;
     }
 
+    public void AddPill() => _currentPills += 1;
+    
     public void Heal(int amount)
     {
+        if (_currentPills <= 0) return;
         int newHp = _data.Health + Mathf.CeilToInt(amount);
-        _data.Health = Mathf.Clamp(newHp, 0, _playerData != null ? _playerData.MaxHealth : 100);
+        _data.Health = Mathf.Clamp(newHp, 0, _playerData.MaxHealth);
+        _currentPills -= 1;
     }
     
     private void OnFood1(InputAction.CallbackContext ctx) => UseFood(0);

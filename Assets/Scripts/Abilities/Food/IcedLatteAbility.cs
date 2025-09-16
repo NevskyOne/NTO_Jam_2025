@@ -11,8 +11,13 @@ namespace Abilities.Food
     [Serializable]
     public class IcedLatteAbility : IAttack
     {
-        [field: SerializeReference] AttackDataSO IAttack.Data { get; set; }
-        private FoodData Data => (FoodData)((IAttack)this).Data;
+        [SerializeField] private FoodData _data;
+
+        AttackDataSO IAttack.Data
+        {
+            get => _data;
+            set => _data = (FoodData)value;
+        }
 
         private Transform _owner;
         private Player _player;
@@ -30,10 +35,10 @@ namespace Abilities.Food
         public void Activate()
         {
             if (_input == null) return;
-            _input.actions[Data.InputBinding].performed += OnPerformed;
+            _input.actions[_data.InputBinding].performed += OnPerformed;
             if (_player != null)
             {
-                foreach (var eff in Data.ApplyOnSelf)
+                foreach (var eff in _data.ApplyOnSelf)
                     _player.AddEffect(eff);
             }
         }
@@ -41,10 +46,10 @@ namespace Abilities.Food
         public void Deactivate()
         {
             if (_input != null)
-                _input.actions[Data.InputBinding].performed -= OnPerformed;
+                _input.actions[_data.InputBinding].performed -= OnPerformed;
             if (_player != null)
             {
-                foreach (var eff in Data.ApplyOnSelf)
+                foreach (var eff in _data.ApplyOnSelf)
                     _player.RemoveEffect(eff);
             }
         }
@@ -73,14 +78,14 @@ namespace Abilities.Food
         private void FireIceShard(Vector2 direction)
         {
             // Проверяем попадание по линии
-            RaycastHit2D hit = Physics2D.Raycast(_owner.position, direction, Data.Radius * 2f);
+            RaycastHit2D hit = Physics2D.Raycast(_owner.position, direction, _data.Radius * 2f);
 
             if (hit.collider != null && hit.collider.transform != _owner)
             {
                 var hittable = hit.collider.GetComponent<IHittable>();
                 if (hittable != null)
                 {
-                    int damage = Data.BaseDamage;
+                    int damage = _data.BaseDamage;
                     // 2x урон против огня
                     if (hit.collider.name.Contains("Fire") || hit.collider.name.Contains("Flame"))
                     {
@@ -88,13 +93,13 @@ namespace Abilities.Food
                     }
 
                     hittable.TakeDamage(damage);
-                    foreach (var eff in Data.ApplyOnTargets)
+                    foreach (var eff in _data.ApplyOnTargets)
                         eff.ApplyEffect(hit.collider.gameObject);
                 }
             }
 
             // Визуализация осколка
-            DrawDebugRay(_owner.position, direction * Data.Radius * 2f, Color.cyan, 0.4f);
+            DrawDebugRay(_owner.position, direction * _data.Radius * 2f, Color.cyan, 0.4f);
         }
 
         private Vector2 RotateVector(Vector2 vector, float angleDegrees)
@@ -110,7 +115,7 @@ namespace Abilities.Food
 
         private IEnumerator CooldownRoutine()
         {
-            yield return new WaitForSeconds(Data.AttackCooldown);
+            yield return new WaitForSeconds(_data.AttackCooldown);
             _cooldownRoutine = null;
         }
 

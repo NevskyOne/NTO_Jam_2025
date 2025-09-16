@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 6552170633359686379}
   - component: {fileID: 2917439802716920206}
   - component: {fileID: 2538940657382975165}
-  - component: {fileID: 7353064538294143117}
+  - component: {fileID: 4082936233981529464}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -214,36 +214,14 @@ MonoBehaviour:
   _dialogueBubblePos: {fileID: 2227079017957132205}
   _cameraTarget: {fileID: 4055795901690513028}
   _showAttackGizmos: 1
---- !u!114 &7353064538294143117
-MonoBehaviour:
+--- !u!81 &4082936233981529464
+AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1589038628922950442}
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
-  m_Actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  m_NotificationBehavior: 0
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents: []
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: Keyboard&Mouse
-  m_DefaultActionMap: Player
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
 --- !u!1 &3055889673209503377
 GameObject:
   m_ObjectHideFlags: 0
@@ -394,7 +372,7 @@ Transform:
   m_GameObject: {fileID: 7208099046927720619}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.71, y: 1.02, z: 0}
+  m_LocalPosition: {x: -1.71, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

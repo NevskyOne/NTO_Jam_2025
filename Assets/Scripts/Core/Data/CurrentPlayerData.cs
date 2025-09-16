@@ -1,12 +1,12 @@
 
 using System.Collections.Generic;
 
-public struct CurrentPlayerData : ISavableData
+public class CurrentPlayerData : ISavableData
 {
     public int Health;
     public int Money;
     public int Reputation;
 
-    public List<int> UsedFood;
-    public List<int> InventoryFood;
+    public List<int> UsedFood = new();
+    public List<int> InventoryFood = new();
 }
