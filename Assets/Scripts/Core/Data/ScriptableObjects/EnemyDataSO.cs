@@ -2,11 +2,16 @@ using UnityEngine;
 
 namespace Core.Data.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "EnemyDataSO", menuName = "Data/Enemy Data")]
+    [CreateAssetMenu(fileName = "EnemyData", menuName = "Game Data/Enemy Data")]
     public class EnemyDataSO : ScriptableObject
     {
-        [field: SerializeField] public int MaxHealth { get; private set; } = 10;
-        [field: SerializeField] public float MoveSpeed { get; private set; } = 3f;
-        [field: SerializeField] public int Damage { get; private set; } = 1;
+        [Header("Здоровье")]
+        [SerializeField] private int _maxHealth = 100;
+        
+        [Header("Награда")]
+        [SerializeField] private int _moneyReward = 10;
+        
+        public int MaxHealth => _maxHealth;
+        public int MoneyReward => _moneyReward;
     }
 }

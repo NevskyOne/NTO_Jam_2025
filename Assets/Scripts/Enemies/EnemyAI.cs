@@ -1,3 +1,4 @@
+#if false
 using System.Collections.Generic;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
@@ -32,3 +33,4 @@ public class EnemyAI : MonoBehaviour, IHittable, IEffectHandler {
 }
 
 public enum EnemyState{ Normal, Attack }
+#endif
