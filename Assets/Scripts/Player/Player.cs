@@ -63,6 +63,13 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 
     private void Awake()
     {
+        // Защита от NullReferenceException
+        if (_playerData == null) 
+        {
+            Debug.LogError("[Player] _playerData не назначен. Проверьте ссылку в GameplayInstaller.");
+            return;
+        }
+
         _mainAttackSet = _playerData.AttackSet;
         if (_mainAttackSet != null && _container != null)
         {

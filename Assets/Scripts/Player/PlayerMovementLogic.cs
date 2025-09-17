@@ -52,6 +52,13 @@ public class PlayerMovementLogic : IMovable, ITickable
     public void Move(Vector2 direction)
     {
         if (_rigidbody == null) return;
+        if (_moveData == null)
+        {
+            Debug.LogError("[PlayerMovementLogic] _moveData не назначен. Проверьте ссылку в GameplayInstaller.");
+            return;
+        }
+        if (_player == null) return;
+
         if (_player != null && _player.State is Player.PlayerState.Attacking or Player.PlayerState.Parrying or Player.PlayerState.Dashing)
         {
             return;
@@ -59,8 +66,12 @@ public class PlayerMovementLogic : IMovable, ITickable
 
         LastDirection = direction;
         
-        if( direction.x > 0) _player.CameraTarget.localPosition = new Vector3(0.5f,1,0);
-        else if( direction.x < 0) _player.CameraTarget.localPosition = new Vector3(-0.5f,1,0);
+        // Безопасное обращение к CameraTarget
+        if (_player.CameraTarget != null)
+        {
+            if (direction.x > 0) _player.CameraTarget.localPosition = new Vector3(0.5f, 1, 0);
+            else if (direction.x < 0) _player.CameraTarget.localPosition = new Vector3(-0.5f, 1, 0);
+        }
         
         // Обновляем таймер dash кулдауна
         if (_dashCooldownTimer > 0)
