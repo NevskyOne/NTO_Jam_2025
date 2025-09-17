@@ -7,13 +7,14 @@ using UnityEngine.Rendering.Universal;
 
 public class GameplayInstaller : MonoInstaller
 {
-    [Header("Data")] [SerializeField] private PlayerDataSO _playerDataSo;
+    [Header("Data")] [SerializeField]  private PlayerDataSO _playerDataSo;
     [SerializeField] private MoveDataSO _moveDataSo;
 
     [Header("Components")]
     [SerializeField] private DialogueStartSystem _dialogueStartSystem;
 
     private ShopSystem _shopSystem;
+
 
     public override void InstallBindings()
     {
