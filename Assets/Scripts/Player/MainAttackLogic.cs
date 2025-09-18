@@ -52,17 +52,9 @@ public class MainAttackLogic : IAttack
             Debug.LogError($"[{GetType().Name}] Data is null. Assign MainAttackData in PlayerDataSO.AttackSet.");
             return;
         }
-        string bindingName = string.IsNullOrEmpty(_data.InputBinding) ? "LeftMouse" : _data.InputBinding;
-        var asset = _input.actions;
-        var action = asset.FindAction(bindingName, false)
-                     ?? asset.FindAction($"Player/{bindingName}", false)
-                     ?? asset.FindAction($"Actions/{bindingName}", false)
-                     ?? asset.FindAction($"UI/{bindingName}", false);
-        if (action == null)
-        {
-            Debug.LogError($"[{GetType().Name}] Input action not found. Tried '{bindingName}' in maps [default, Player, Actions, UI]");
-            return;
-        }
+
+        var action = _input.actions[_data.InputBinding];
+
         if (_onPerformed == null)
             _onPerformed = ctx => PerformAttack(_player != null ? _player.Movement.LastDirection : Vector2.right);
         action.performed += _onPerformed;

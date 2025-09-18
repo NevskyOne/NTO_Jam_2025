@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8edef0a595744f4aaed9aeea2e18357, type: 3}
   m_Name: EnemyData
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.EnemyDataSO
-  _maxHealth: 100
+  _maxHealth: 5
   _moneyReward: 10
