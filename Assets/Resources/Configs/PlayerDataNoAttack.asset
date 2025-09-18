@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.PlayerDataSO
   _attackSet: []
   _maxHealth: 3
-  _startMoney: 0
+  _startMoney: 200
   _startReputation: 0
   references:
     version: 2

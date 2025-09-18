@@ -1,7 +1,12 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: 57e488c47d8f0334cbd9419a260c4176
 folderAsset: yes
 DefaultImporter:
+=======
+guid: c8ad15a133bad714f845c75e0ca467ac
+PrefabImporter:
+>>>>>>> parent of 7af21be (Merge branch 'Tim')
   externalObjects: {}
   userData: 
   assetBundleName: 

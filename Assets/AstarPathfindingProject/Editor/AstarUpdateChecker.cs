@@ -107,8 +107,8 @@ namespace Pathfinding {
 		};
 
 		static AstarUpdateChecker() {
-			// ОТКЛЮЧЕНО: Add a callback so that we can parse the message when it has been downloaded
-			// EditorApplication.update += UpdateCheckLoop;
+			// Add a callback so that we can parse the message when it has been downloaded
+			EditorApplication.update += UpdateCheckLoop;
 			EditorBase.getDocumentationURL = () => GetURL("documentation");
 		}
 

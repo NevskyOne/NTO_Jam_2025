@@ -41,15 +41,10 @@ namespace Abilities.Food
                 return;
             }
             _input.actions[_data.InputBinding].performed += OnPerformed;
-            
-            // Применяем эффекты на себя через новую систему
-            if (_player != null && _data.ApplyOnSelf != null)
+            if (_player != null)
             {
-                foreach (var effect in _data.ApplyOnSelf)
-                {
-                    if (effect != null)
-                        effect.ApplyEffect(_player.gameObject);
-                }
+                foreach (var eff in _data.ApplyOnSelf)
+                    _player.AddEffect(eff);
             }
         }
 
@@ -57,15 +52,10 @@ namespace Abilities.Food
         {
             if (_input != null && _data != null)
                 _input.actions[_data.InputBinding].performed -= OnPerformed;
-                
-            // Убираем эффекты с себя через новую систему
-            if (_player != null && _data != null && _data.ApplyOnSelf != null)
+            if (_player != null && _data != null)
             {
-                foreach (var effect in _data.ApplyOnSelf)
-                {
-                    if (effect != null)
-                        effect.RemoveEffect(_player.gameObject);
-                }
+                foreach (var eff in _data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
             }
         }
 
@@ -101,16 +91,8 @@ namespace Abilities.Food
                             Debug.Log($"Ratatouille: bonus damage to greasy enemy {col.name}");
                         }
                         h.TakeDamage(damage);
-                        
-                        // Применяем эффекты на цели через новую систему
-                        if (_data.ApplyOnTargets != null)
-                        {
-                            foreach (var effect in _data.ApplyOnTargets)
-                            {
-                                if (effect != null)
-                                    effect.ApplyEffect(col.gameObject);
-                            }
-                        }
+                        foreach (var eff in _data.ApplyOnTargets)
+                            eff.ApplyEffect(col.gameObject);
                         Debug.Log($"Ratatouille vine hit {col.name} for {damage} damage");
                     }
                 }

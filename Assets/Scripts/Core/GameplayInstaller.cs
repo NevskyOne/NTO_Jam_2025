@@ -14,12 +14,16 @@ public class GameplayInstaller : MonoInstaller
     [SerializeField] private DialogueStartSystem _dialogueStartSystem;
 
     private ShopSystem _shopSystem;
+    private DragSystem _dragSystem;
 
 
     public override void InstallBindings()
     {
         _shopSystem = new ShopSystem();
         Container.BindInterfacesAndSelfTo<ShopSystem>().AsSingle().NonLazy();
+
+        _dragSystem = new DragSystem();
+        Container.BindInterfacesAndSelfTo<DragSystem>().AsSingle().NonLazy();
         
         Container.Bind<PlayerDataSO>().FromInstance(_playerDataSo).AsSingle();
         Container.Bind<MoveDataSO>().FromInstance(_moveDataSo).AsSingle();
@@ -31,8 +35,9 @@ public class GameplayInstaller : MonoInstaller
 
         Container.Bind<ShopUI>().FromComponentInHierarchy().AsSingle();
         Container.Bind<Camera>().FromComponentInHierarchy().AsSingle();
+        Container.Bind<MainUIInteractions>().FromComponentInHierarchy().AsSingle();
         Container.Bind<PixelPerfectCamera>().FromComponentInHierarchy().AsSingle();
-        Container.Bind<DragSystem>().AsSingle();
+        
 
     }
 

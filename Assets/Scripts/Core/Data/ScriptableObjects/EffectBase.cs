@@ -142,20 +142,14 @@ namespace Core.Interfaces
         
         public override void OnApply(GameObject target)
         {
-            var player = target.GetComponent<Player>();
-            if (player != null && player.Movement != null)
-            {
-                player.Movement.SetSpeedMultiplier(_speedMultiplier);
-            }
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetSpeedMultiplier(_speedMultiplier);
         }
         
         public override void OnRemove(GameObject target)
         {
-            var player = target.GetComponent<Player>();
-            if (player != null && player.Movement != null)
-            {
-                player.Movement.SetSpeedMultiplier(1f);
-            }
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetSpeedMultiplier(1f);
         }
     }
     
@@ -164,20 +158,14 @@ namespace Core.Interfaces
     {
         public override void OnApply(GameObject target)
         {
-            var player = target.GetComponent<Player>();
-            if (player != null && player.Movement != null)
-            {
-                player.Movement.SetStunned(true);
-            }
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetStunned(true);
         }
         
         public override void OnRemove(GameObject target)
         {
-            var player = target.GetComponent<Player>();
-            if (player != null && player.Movement != null)
-            {
-                player.Movement.SetStunned(false);
-            }
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetStunned(false);
         }
     }
     

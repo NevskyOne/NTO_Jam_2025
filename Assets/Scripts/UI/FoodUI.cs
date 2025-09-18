@@ -8,6 +8,8 @@ public class FoodUI : MonoBehaviour
 	[field: SerializeReference] public int Price {get; private set;}
 	[field: SerializeReference, SubclassSelector] public IAttack Food {get; private set;}
 
+	public FoodState State {get; set;} = FoodState.Shop;
+
 	private DragSystem _dragSystem;
 
 	[Inject]
@@ -27,4 +29,11 @@ public class FoodUI : MonoBehaviour
 	public void OnDragEnd(){
 		_dragSystem.DropObj(transform);
 	}
+}
+
+public enum FoodState
+{
+	Inventory,
+	Abilities,
+	Shop
 }

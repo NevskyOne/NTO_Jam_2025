@@ -36,15 +36,10 @@ namespace Abilities.Food
         {
             if (_input == null) return;
             _input.actions[_data.InputBinding].performed += OnPerformed;
-            
-            // Применяем эффекты на себя через новую систему
-            if (_player != null && _data.ApplyOnSelf != null)
+            if (_player != null)
             {
-                foreach (var effect in _data.ApplyOnSelf)
-                {
-                    if (effect != null)
-                        effect.ApplyEffect(_player.gameObject);
-                }
+                foreach (var eff in _data.ApplyOnSelf)
+                    _player.AddEffect(eff);
             }
         }
 
@@ -52,15 +47,10 @@ namespace Abilities.Food
         {
             if (_input != null)
                 _input.actions[_data.InputBinding].performed -= OnPerformed;
-                
-            // Убираем эффекты с себя через новую систему
-            if (_player != null && _data.ApplyOnSelf != null)
+            if (_player != null)
             {
-                foreach (var effect in _data.ApplyOnSelf)
-                {
-                    if (effect != null)
-                        effect.RemoveEffect(_player.gameObject);
-                }
+                foreach (var eff in _data.ApplyOnSelf)
+                    _player.RemoveEffect(eff);
             }
         }
 
@@ -103,16 +93,8 @@ namespace Abilities.Food
                     }
 
                     hittable.TakeDamage(damage);
-                    
-                    // Применяем эффекты на цели через новую систему
-                    if (_data.ApplyOnTargets != null)
-                    {
-                        foreach (var effect in _data.ApplyOnTargets)
-                        {
-                            if (effect != null)
-                                effect.ApplyEffect(hit.collider.gameObject);
-                        }
-                    }
+                    foreach (var eff in _data.ApplyOnTargets)
+                        eff.ApplyEffect(hit.collider.gameObject);
                 }
             }
 
@@ -140,6 +122,20 @@ namespace Abilities.Food
         private void DrawDebugRay(Vector2 start, Vector2 end, Color color, float duration)
         {
             Debug.DrawLine(start, end, color, duration);
+        }
+
+        private void DrawDebugCircle(Vector2 center, float radius, Color color, float duration)
+        {
+            int segments = 24;
+            float angle = 2 * Mathf.PI / segments;
+            Vector2 prev = center + new Vector2(Mathf.Cos(0), Mathf.Sin(0)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = i * angle;
+                Vector2 cur = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+                Debug.DrawLine(prev, cur, color, duration);
+                prev = cur;
+            }
         }
     }
 }
