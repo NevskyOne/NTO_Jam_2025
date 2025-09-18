@@ -68,6 +68,7 @@ Player: Хорошо, буду ждать с нетерпением.
 Player: Кстати, я в подземелье увидел каких-то <color=blue>CatHedral</color>.
 Barmen: Да, это очень популярный нынче профсоюз, можешь посмотреть информацию о нём также на доске у лифта.
 Player: Обязательно!
+<<ShowEnding LevelSystem>>
 ===
 
 title: Barmen_Default
@@ -78,8 +79,7 @@ position: 351,180
 Barmen: Здорова, приятель! Хочешь сделать заказ или просто поболтать? <<if $firstADay == true>>
 Barmen: Хочешь сделать заказ или просто поболтать? <<if $firstADay == false>>
 <<set $firstADay = false>>
--> Player: Хочу купить еду у тебя.
-    <<OpenShop MainUI true>>
+-> Player: До скорого!
 -> Player: А кто тебе рассказал о подработке? <<if $levelOfRep == 0>>
     <<jump Barmen_About_Delivery>>
 -> Player: Расскажешь подробнее о профсоюзе? <<if $levelOfRep == 1>>

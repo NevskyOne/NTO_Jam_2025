@@ -35,6 +35,8 @@ title: Player_First_Plant
 Я начал готовить ещё в 7 лет.
 Тогда мне казалось, как будто я волшебник, который создаёт эликсир безудержного наслаждения.
 А особенно приятно было видеть счастливое лицо родителей, когда они пробовали мою стряпню.
+<<RequestNewLevel LevelSystem 0>>
+<<LoadLevel LevelSystem>>
 ===
 
 title: Player_Second_Plant
@@ -51,4 +53,6 @@ title: Player_Second_Plant
 И в итоге... где я сейчас? 
 Внизу, в подземелье, хах, вспоминаю прошлое.
 <color=purple>В абсолютной тишине.</color>
+<<RequestNewLevel LevelSystem 0>>
+<<LoadLevel LevelSystem>>
 ===

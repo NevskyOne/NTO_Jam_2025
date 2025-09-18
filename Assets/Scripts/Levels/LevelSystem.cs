@@ -5,6 +5,7 @@ using Zenject;
 
 public class LevelSystem : MonoBehaviour
 {
+	[SerializeField] private GameObject _doorEnd;
 	private LevelData _levelData;
 	private MainUIInteractions _mainUI;
 	private Player _player; 
@@ -28,6 +29,12 @@ public class LevelSystem : MonoBehaviour
 		_mainUI.ChangeLevelSelectionState(true);
 	}
 
+	[YarnCommand("ShowEnding")]
+	public void ShowEnding()
+	{
+		_doorEnd.SetActive(true);
+	}
+
 	public void ChangeOneHp(bool active)
 	{
 		_levelData.OneHp = active;
@@ -38,6 +45,7 @@ public class LevelSystem : MonoBehaviour
 		_levelData.NoHeal = active;
 	}
 
+	[YarnCommand("LoadLevel")]
 	public void LoadLevel()
 	{
 		SceneManager.LoadScene(_levelData.SceneId);
