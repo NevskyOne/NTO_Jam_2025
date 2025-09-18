@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: MoveDataBar
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.MoveDataSO
   _moveSpeed: 5
-  _maxMoveSpeed: 12
-  _acceleration: 50
-  _deceleration: 25
+  _maxMoveSpeed: 10
+  _acceleration: 72.3
+  _deceleration: 30.2
   _jumpForce: 0
   _maxJumpHeight: 0
   _jumpTimeThreshold: 3
+  _normalGravity: 1
   _fallMultiplier: 0
   _dashForce: 0
   _dashDuration: 0

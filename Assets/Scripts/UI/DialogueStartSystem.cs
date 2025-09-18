@@ -79,7 +79,7 @@ public class DialogueStartSystem : MonoBehaviour
     {
         await Task.Delay(10);
         var childActive = ctx.ToString() != new InputAction.CallbackContext().ToString() && (_optionsObj.childCount > 1 && _optionsObj.GetChild(1).gameObject.activeSelf);
-        print(childActive + " _lastName: " + _lastName + " _name.text:" + _name.text);
+        //print(childActive + " _lastName: " + _lastName + " _name.text:" + _name.text);
         if (_lastName == _name.text && (_optionsObj.childCount < 2 || !childActive)) {return;}
         else if (_lastName != _name.text && !childActive)
         {

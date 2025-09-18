@@ -5,7 +5,7 @@ public class Character : MonoBehaviour, IInteractable
 {
     [SerializeField] private string _startNode;
     [SerializeField] private Transform _dialoguePosition;
-    [SerializeField] private GameObject _outLine;
+    [SerializeField] private Material _outlineMaterial;
 
     private DialogueStartSystem _dialogueSys;
 
@@ -17,12 +17,12 @@ public class Character : MonoBehaviour, IInteractable
 
     public void MarkInteractable()
     {
-        _outLine.SetActive(true);
+        _outlineMaterial.SetFloat("_OutlineEnabled", 1);
     }
     
     public void UnmarkInteractable()
     {
-        _outLine.SetActive(false);
+        _outlineMaterial.SetFloat("_OutlineEnabled", 0);
     }
 
     public void Interact()

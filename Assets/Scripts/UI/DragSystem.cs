@@ -3,11 +3,11 @@ using UnityEngine;
 using Zenject;
 
 
-public class DragSystem : MonoBehaviour
+public class DragSystem
 {
     private PlayerInput _playerInput;
     private Vector2 _initPos;
-    public Transform OverUIElement { get; set; }
+    public DropTrigger OverUIElement { get; set; }
     
     [Inject]
     private void Construct(PlayerInput input)
@@ -27,9 +27,9 @@ public class DragSystem : MonoBehaviour
     
     public void DropObj(Transform obj)
     {
-        if (OverUIElement)
+        if (OverUIElement && OverUIElement.OnDrop(obj))
         {
-            obj.SetParent(OverUIElement);
+            obj.SetParent(OverUIElement.transform);
         }
         else
         {

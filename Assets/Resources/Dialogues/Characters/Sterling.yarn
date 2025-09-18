@@ -25,6 +25,7 @@ Sterling: Хорошо, я была бы не против такого пово
 Sterling: Оплату дам после выполнения заказа, но я не поскуплюсь.
 Player: Отлично, до свидания!
 Sterling: Удачи вам, мистер Бороу.
+<<RequestNewLevel LevelSystem 1>>
 ===
 
 title: Sterling_Complete
