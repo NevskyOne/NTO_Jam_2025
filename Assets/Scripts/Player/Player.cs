@@ -183,17 +183,39 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     
     public void UseFood(int slot)
     {
-        if (_abilitiesSet == null || slot < 0 || slot >= _abilitiesSet.Count || _abilitiesSet[slot] == null) return;
-        Debug.Log($"Use ability slot={slot}");
+        Debug.Log($"🍽️ [UseFood] Попытка использовать еду в слоте {slot}");
+        
+        if (_abilitiesSet == null)
+        {
+            Debug.LogError("🍽️ [UseFood] _abilitiesSet is null!");
+            return;
+        }
+        
+        if (slot < 0 || slot >= _abilitiesSet.Count)
+        {
+            Debug.LogError($"🍽️ [UseFood] Неверный слот {slot}. Доступно слотов: {_abilitiesSet.Count}");
+            return;
+        }
+        
+        if (_abilitiesSet[slot] == null)
+        {
+            Debug.LogError($"🍽️ [UseFood] Еда в слоте {slot} равна null!");
+            return;
+        }
+        
+        Debug.Log($"🍽️ [UseFood] Активируем способность в слоте {slot}: {_abilitiesSet[slot].GetType().Name}");
         _abilitiesSet[slot].Activate();
+        
         var mainToDeactivate = _mainAttackSet.Find(attack => attack.Data.InputBinding == _abilitiesSet[slot].Data.InputBinding);
         if (mainToDeactivate != null)
         {
+            Debug.Log($"🍽️ [UseFood] Деактивируем основную атаку: {mainToDeactivate.GetType().Name}");
             mainToDeactivate.Deactivate();
             _foodDeactivationRoutine = StartCoroutine(FoodDeactivationRoutine(_abilitiesSet[slot], mainToDeactivate));
         }
         else
         {
+            Debug.Log($"🍽️ [UseFood] Основная атака для деактивации не найдена");
             _foodDeactivationRoutine = StartCoroutine(FoodDeactivationRoutine(_abilitiesSet[slot]));
         }
     }
@@ -259,10 +281,24 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         _currentPills -= 1;
     }
     
-    private void OnFood1(InputAction.CallbackContext ctx) => UseFood(0);
-    private void OnFood2(InputAction.CallbackContext ctx) => UseFood(1);
-    private void OnFood3(InputAction.CallbackContext ctx) => UseFood(2);
-
+    private void OnFood1(InputAction.CallbackContext ctx) 
+    { 
+        Debug.Log("🍽️ [Input] Нажата клавиша 1 - активация еды слот 0");
+        UseFood(0);
+    }
+    
+    private void OnFood2(InputAction.CallbackContext ctx) 
+    { 
+        Debug.Log("🍽️ [Input] Нажата клавиша 2 - активация еды слот 1");
+        UseFood(1);
+    }
+    
+    private void OnFood3(InputAction.CallbackContext ctx) 
+    { 
+        Debug.Log("🍽️ [Input] Нажата клавиша 3 - активация еды слот 2");
+        UseFood(2);
+    }
+    
     private void OnDrawGizmosSelected()
     {
         if (!_showAttackGizmos) return;

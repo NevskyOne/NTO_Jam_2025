@@ -9,14 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a41033d3bcc64db787b1116a0721efe7, type: 3}
-  m_Name: TeaData
-  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  m_Script: {fileID: 11500000, guid: 5d564a73e5319364abc6305a48c9562a, type: 3}
+  m_Name: BasicEnemyAttackData-bee
+  m_EditorClassIdentifier: Assembly-CSharp::BasicEnemyAttackDataSO
   <InputBinding>k__BackingField: 
   <BaseDamage>k__BackingField: 1
-  <Duration>k__BackingField: 5
-  _radius: 1.2
-  _forwardOffset: 0.7
-  _attackCooldown: 0.8
-  _applyOnSelf: []
-  _applyOnTargets: []
+  <Radius>k__BackingField: 1
+  <AttackCooldown>k__BackingField: 1
+  _mode: 0

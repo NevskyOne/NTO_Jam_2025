@@ -1,5 +1,6 @@
 using UnityEngine;
 using Core.Interfaces;
+using System.Collections;
 
 namespace Core.Data.ScriptableObjects
 {
@@ -9,53 +10,169 @@ namespace Core.Data.ScriptableObjects
     {
         [Header("Speed Settings")]
         [SerializeField] private float _speedMultiplier = 2f;
+        [SerializeField] private float _defaultDuration = 5f;
         
-        private PlayerMovementLogic _playerMovement;
-        private float _originalSpeed;
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _playerMovement = target.GetComponent<PlayerMovementLogic>();
-            if (_playerMovement != null)
+            var player = target.GetComponent<Player>();
+            if (player != null && player.Movement != null)
             {
-                _originalSpeed = _playerMovement.CurrentMoveSpeed;
-                _playerMovement.SetSpeedMultiplier(_speedMultiplier);
+                player.Movement.SetSpeedMultiplier(_speedMultiplier);
+                
+                if (Config == null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
             }
         }
         
         public override void OnRemove(GameObject target)
         {
-            if (_playerMovement != null)
+            var player = target.GetComponent<Player>();
+            if (player != null && player.Movement != null)
             {
-                _playerMovement.SetSpeedMultiplier(1f);
+                player.Movement.SetSpeedMultiplier(1f);
             }
+        }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
         }
     }
     
-    // Эффект замедления (Айс латте)
+    // Эффект замедления (Лед)
     [CreateAssetMenu(fileName = "SlowEffect", menuName = "Game Data/Effects/Slow Effect")]
     public class SlowEffect : EffectBase
     {
         [Header("Slow Settings")]
         [SerializeField] private float _slowMultiplier = 0.5f;
+        [SerializeField] private float _defaultDuration = 3f;
         
-        private PlayerMovementLogic _playerMovement;
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _playerMovement = target.GetComponent<PlayerMovementLogic>();
-            if (_playerMovement != null)
+            var player = target.GetComponent<Player>();
+            if (player != null && player.Movement != null)
             {
-                _playerMovement.SetSpeedMultiplier(_slowMultiplier);
+                player.Movement.SetSpeedMultiplier(_slowMultiplier);
+                
+                if (Config == null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
             }
         }
         
         public override void OnRemove(GameObject target)
         {
-            if (_playerMovement != null)
+            var player = target.GetComponent<Player>();
+            if (player != null && player.Movement != null)
             {
-                _playerMovement.SetSpeedMultiplier(1f);
+                player.Movement.SetSpeedMultiplier(1f);
             }
+        }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
+        }
+    }
+    
+    // Эффект яда (от Шершня)
+    [CreateAssetMenu(fileName = "PoisonEffect", menuName = "Game Data/Effects/Poison Effect")]
+    public class PoisonEffect : EffectBase
+    {
+        [Header("Poison Settings")]
+        [SerializeField] private int _damagePerTick = 1;
+        [SerializeField] private float _tickInterval = 1f;
+        [SerializeField] private float _defaultDuration = 5f;
+        
+        private Coroutine _poisonCoroutine;
+        
+        public override bool AutoExpire => true;
+        
+        public override void OnApply(GameObject target)
+        {
+            var player = target.GetComponent<Player>();
+            if (player != null)
+            {
+                _poisonCoroutine = player.StartCoroutine(PoisonTick(target));
+                
+                if (Config == null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
+            }
+        }
+        
+        public override void OnRemove(GameObject target)
+        {
+            var player = target.GetComponent<Player>();
+            if (_poisonCoroutine != null && player != null)
+            {
+                player.StopCoroutine(_poisonCoroutine);
+            }
+        }
+        
+        private IEnumerator PoisonTick(GameObject target)
+        {
+            var runner = target.GetComponent<EffectRunner>();
+            while (runner != null && runner.HasEffect<PoisonEffect>())
+            {
+                yield return new WaitForSeconds(_tickInterval);
+                var hittable = target.GetComponent<IHittable>();
+                hittable?.TakeDamage(_damagePerTick);
+            }
+        }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
+        }
+    }
+    
+    // Эффект стана (от Механического паука)
+    [CreateAssetMenu(fileName = "StunEffect", menuName = "Game Data/Effects/Stun Effect")]
+    public class StunEffect : EffectBase
+    {
+        [SerializeField] private float _defaultDuration = 2f;
+        
+        public override bool AutoExpire => true;
+        
+        public override void OnApply(GameObject target)
+        {
+            var player = target.GetComponent<Player>();
+            if (player != null && player.Movement != null)
+            {
+                player.Movement.SetStunned(true);
+                
+                if (Config == null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
+            }
+        }
+        
+        public override void OnRemove(GameObject target)
+        {
+            var player = target.GetComponent<Player>();
+            if (player != null && player.Movement != null)
+            {
+                player.Movement.SetStunned(false);
+            }
+        }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
         }
     }
     
@@ -65,69 +182,75 @@ namespace Core.Data.ScriptableObjects
     {
         [Header("Shield Settings")]
         [SerializeField] private int _shieldAmount = 1;
+        [SerializeField] private float _defaultDuration = 10f;
         
-        private Player _player;
-        private int _currentShield;
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _player = target.GetComponent<Player>();
-            if (_player != null)
+            Debug.Log($"🛡️ Щит применен на {target.name}");
+            
+            if (Config == null)
             {
-                _currentShield = _shieldAmount;
-                // Подписываемся на урон чтобы блокировать его
-                _player.GetComponent<IHittable>();
+                var player = target.GetComponent<Player>();
+                if (player != null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
             }
         }
         
         public override void OnRemove(GameObject target)
         {
-            _currentShield = 0;
+            Debug.Log($"🛡️ Щит снят с {target.name}");
         }
         
-        public bool TryBlockDamage()
+        private IEnumerator ForceExpire(GameObject target, float duration)
         {
-            if (_currentShield > 0)
-            {
-                _currentShield--;
-                if (_currentShield <= 0)
-                {
-                    // Щит исчерпан, удаляем эффект
-                    if (_player != null)
-                        RemoveEffect(_player.gameObject);
-                }
-                return true;
-            }
-            return false;
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
         }
     }
     
-    // Эффект липких ловушек (Пельмени)
+    // Эффект ловушек (Пельмени)
     [CreateAssetMenu(fileName = "TrapEffect", menuName = "Game Data/Effects/Trap Effect")]
     public class TrapEffect : EffectBase
     {
         [Header("Trap Settings")]
-        [SerializeField] private float _slowAmount = 0.3f;
+        [SerializeField] private float _slowMultiplier = 0.3f;
+        [SerializeField] private float _defaultDuration = 4f;
         
-        private IEnemyMovable _enemyMovement;
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _enemyMovement = target.GetComponent<IEnemyMovable>();
-            if (_enemyMovement != null)
+            // Замедляем врага
+            var enemy = target.GetComponent<BasicEnemyMovementLogic>();
+            if (enemy != null)
             {
-                // Замедляем врага
-                var basicMovement = target.GetComponent<BasicEnemyMovementLogic>();
-                if (basicMovement != null)
+                // Здесь нужно добавить метод SetSpeedMultiplier в BasicEnemyMovementLogic
+                Debug.Log($"🕸️ Враг {target.name} попал в ловушку!");
+            }
+            
+            if (Config == null)
+            {
+                var player = GameObject.FindObjectOfType<Player>();
+                if (player != null)
                 {
-                    // Здесь нужно добавить метод для изменения скорости в BasicEnemyMovementLogic
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
                 }
             }
         }
         
         public override void OnRemove(GameObject target)
         {
-            // Восстанавливаем скорость
+            Debug.Log($"🕸️ Враг {target.name} освободился от ловушки!");
+        }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
         }
     }
     
@@ -137,23 +260,33 @@ namespace Core.Data.ScriptableObjects
     {
         [Header("Fat Settings")]
         [SerializeField] private float _damageReduction = 0.5f;
+        [SerializeField] private float _defaultDuration = 8f;
         
-        private Player _player;
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _player = target.GetComponent<Player>();
-            // Эффект снижения урона будет обрабатываться в Player.TakeDamage
+            Debug.Log($"🍖 Жирность применена на {target.name} - снижение урона на {(1-_damageReduction)*100}%");
+            
+            if (Config == null)
+            {
+                var player = target.GetComponent<Player>();
+                if (player != null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
+            }
         }
         
         public override void OnRemove(GameObject target)
         {
-            // Восстанавливаем нормальный урон
+            Debug.Log($"🍖 Жирность снята с {target.name}");
         }
         
-        public float GetDamageMultiplier()
+        private IEnumerator ForceExpire(GameObject target, float duration)
         {
-            return _damageReduction;
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
         }
     }
     
@@ -165,35 +298,45 @@ namespace Core.Data.ScriptableObjects
         [SerializeField] private int _tentacleCount = 3;
         [SerializeField] private float _tentacleRange = 2f;
         [SerializeField] private int _tentacleDamage = 1;
+        [SerializeField] private float _attackInterval = 2f;
+        [SerializeField] private float _defaultDuration = 10f;
         
-        private Player _player;
         private Coroutine _tentacleCoroutine;
+        
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _player = target.GetComponent<Player>();
-            if (_player != null)
+            var player = target.GetComponent<Player>();
+            if (player != null)
             {
-                _tentacleCoroutine = _player.StartCoroutine(TentacleAttack());
+                _tentacleCoroutine = player.StartCoroutine(TentacleAttack(target));
+                
+                if (Config == null)
+                {
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
+                }
             }
         }
         
         public override void OnRemove(GameObject target)
         {
-            if (_tentacleCoroutine != null && _player != null)
+            var player = target.GetComponent<Player>();
+            if (_tentacleCoroutine != null && player != null)
             {
-                _player.StopCoroutine(_tentacleCoroutine);
+                player.StopCoroutine(_tentacleCoroutine);
             }
         }
         
-        private System.Collections.IEnumerator TentacleAttack()
+        private IEnumerator TentacleAttack(GameObject owner)
         {
-            while (true)
+            var runner = owner.GetComponent<EffectRunner>();
+            while (runner != null && runner.HasEffect<TentacleEffect>())
             {
-                yield return new WaitForSeconds(2f); // Атака каждые 2 секунды
+                yield return new WaitForSeconds(_attackInterval);
                 
                 // Находим врагов в радиусе
-                Collider2D[] enemies = Physics2D.OverlapCircleAll(_player.transform.position, _tentacleRange);
+                Collider2D[] enemies = Physics2D.OverlapCircleAll(owner.transform.position, _tentacleRange);
                 int attacked = 0;
                 
                 foreach (var enemy in enemies)
@@ -201,80 +344,115 @@ namespace Core.Data.ScriptableObjects
                     if (attacked >= _tentacleCount) break;
                     
                     var hittable = enemy.GetComponent<IHittable>();
-                    if (hittable != null && enemy.gameObject != _player.gameObject)
+                    if (hittable != null && enemy.gameObject != owner)
                     {
                         hittable.TakeDamage(_tentacleDamage);
                         attacked++;
+                        Debug.Log($"🐙 Тентакль атаковал {enemy.name}!");
                     }
                 }
             }
         }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
+        }
     }
     
-    // Эффект яда (от Шершня)
-    [CreateAssetMenu(fileName = "PoisonEffect", menuName = "Game Data/Effects/Poison Effect")]
-    public class PoisonEffect : EffectBase
+    // Эффект ожирения (Бургер)
+    [CreateAssetMenu(fileName = "FattenEffect", menuName = "Game Data/Effects/Fatten Effect")]
+    public class FattenEffect : EffectBase
     {
-        [Header("Poison Settings")]
-        [SerializeField] private int _damagePerTick = 1;
-        [SerializeField] private float _tickInterval = 1f;
+        [Header("Fatten Settings")]
+        [SerializeField] private float _sizeMultiplier = 1.5f;
+        [SerializeField] private float _defaultDuration = 6f;
         
-        private Player _player;
-        private Coroutine _poisonCoroutine;
+        private Vector3 _originalScale;
+        
+        public override bool AutoExpire => true;
         
         public override void OnApply(GameObject target)
         {
-            _player = target.GetComponent<Player>();
-            if (_player != null)
+            _originalScale = target.transform.localScale;
+            target.transform.localScale = _originalScale * _sizeMultiplier;
+            Debug.Log($"🍔 Враг {target.name} растолстел!");
+            
+            if (Config == null)
             {
-                _poisonCoroutine = _player.StartCoroutine(PoisonTick());
-            }
-        }
-        
-        public override void OnRemove(GameObject target)
-        {
-            if (_poisonCoroutine != null && _player != null)
-            {
-                _player.StopCoroutine(_poisonCoroutine);
-            }
-        }
-        
-        private System.Collections.IEnumerator PoisonTick()
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(_tickInterval);
-                if (_player != null)
+                var player = GameObject.FindObjectOfType<Player>();
+                if (player != null)
                 {
-                    _player.TakeDamage(_damagePerTick);
+                    player.StartCoroutine(ForceExpire(target, _defaultDuration));
                 }
             }
         }
+        
+        public override void OnRemove(GameObject target)
+        {
+            if (target != null)
+            {
+                target.transform.localScale = _originalScale;
+                Debug.Log($"🍔 Враг {target.name} вернулся к нормальному размеру!");
+            }
+        }
+        
+        private IEnumerator ForceExpire(GameObject target, float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            RemoveEffect(target);
+        }
     }
     
-    // Эффект стана (от Механического паука)
-    [CreateAssetMenu(fileName = "StunEffect", menuName = "Game Data/Effects/Stun Effect")]
-    public class StunEffect : EffectBase
+    // Эффект взрыва (Взрывная карамель)
+    [CreateAssetMenu(fileName = "BombEffect", menuName = "Game Data/Effects/Bomb Effect")]
+    public class BombEffect : EffectBase
     {
-        private Player _player;
-        private PlayerMovementLogic _movement;
+        [Header("Bomb Settings")]
+        [SerializeField] private int _explosionDamage = 3;
+        [SerializeField] private float _explosionRadius = 2f;
+        [SerializeField] private float _fuseTime = 2f;
+        
+        public override bool AutoExpire => false; // Взрывается сам
         
         public override void OnApply(GameObject target)
         {
-            _player = target.GetComponent<Player>();
-            _movement = target.GetComponent<PlayerMovementLogic>();
-            
-            if (_movement != null)
+            var player = GameObject.FindObjectOfType<Player>();
+            if (player != null)
             {
-                _movement.SetStunned(true);
+                player.StartCoroutine(BombCountdown(target));
             }
         }
         
         public override void OnRemove(GameObject target)
         {
-            if (_movement != null)
+            // Эффект удаляется автоматически после взрыва
+        }
+        
+        private IEnumerator BombCountdown(GameObject target)
+        {
+            Debug.Log($"💣 Бомба установлена на {target.name}! Взрыв через {_fuseTime} сек!");
+            
+            yield return new WaitForSeconds(_fuseTime);
+            
+            if (target != null)
             {
-                _movement.SetStunned(false);
+                // Взрыв!
+                Collider2D[] victims = Physics2D.OverlapCircleAll(target.transform.position, _explosionRadius);
+                
+                foreach (var victim in victims)
+                {
+                    var hittable = victim.GetComponent<IHittable>();
+                    if (hittable != null)
+                    {
+                        hittable.TakeDamage(_explosionDamage);
+                        Debug.Log($"💥 Взрыв повредил {victim.name}!");
+                    }
+                }
+                
+                Debug.Log($"💥 ВЗРЫВ! Урон {_explosionDamage} в радиусе {_explosionRadius}");
+                RemoveEffect(target);
             }
         }
     }

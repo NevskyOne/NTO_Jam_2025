@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 344d4e12c370c544fb07fb7839121f26, type: 3}
-  m_Name: MoveEn
-  m_EditorClassIdentifier: Assembly-CSharp::BasicEnemyMoveDataSO
-  _moveSpeed: 5
-  _acceleration: 10
-  _deceleration: 5
-  _flipSprite: 1
+  m_Script: {fileID: 0}
+  m_Name: BombEffect
+  m_EditorClassIdentifier: Assembly-CSharp:Core.Data.ScriptableObjects:BombEffect
+  _config: {fileID: 11400000, guid: 495282ade80ecad43b4b886fad0fb877, type: 2}
+  _explosionDamage: 3
+  _explosionRadius: 2
+  _fuseTime: 2

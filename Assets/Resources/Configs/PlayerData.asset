@@ -16,12 +16,17 @@ MonoBehaviour:
   - rid: 5469746339609313535
   - rid: 5469746339609313536
   - rid: 5469746339609313537
+  - rid: 3679786562280227040
   _maxHealth: 3
   _startMoney: 0
   _startReputation: 0
   references:
     version: 2
     RefIds:
+    - rid: 3679786562280227040
+      type: {class: TeaAbility, ns: Abilities.Food, asm: Assembly-CSharp}
+      data:
+        _data: {fileID: 11400000, guid: f362dd594fa91434f8f98f18b2956d98, type: 2}
     - rid: 5469746339609313535
       type: {class: MainAttackLogic, ns: , asm: Assembly-CSharp}
       data:
@@ -30,6 +35,7 @@ MonoBehaviour:
       type: {class: DownAttackLogic, ns: , asm: Assembly-CSharp}
       data:
         _data: {fileID: 11400000, guid: e4074c570b706b14693a2bec906e4be4, type: 2}
+        Attacked: 0
     - rid: 5469746339609313537
       type: {class: ParryAttackLogic, ns: , asm: Assembly-CSharp}
       data:
