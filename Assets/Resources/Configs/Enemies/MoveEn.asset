@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d4e12c370c544fb07fb7839121f26, type: 3}
   m_Name: MoveEn
   m_EditorClassIdentifier: Assembly-CSharp::BasicEnemyMoveDataSO
-  _moveSpeed: 2.5
+  _moveSpeed: 5
   _acceleration: 10
   _deceleration: 5
   _flipSprite: 1

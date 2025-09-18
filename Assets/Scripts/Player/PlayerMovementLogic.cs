@@ -16,6 +16,7 @@ public class PlayerMovementLogic : IMovable, ITickable
     private float _moveInputX; // cached horizontal input
     
     // Эффекты
+    private float _downSpeedMultiplier = 1f;
     private float _speedMultiplier = 1f;
     private bool _isStunned = false;
     
@@ -88,19 +89,14 @@ public class PlayerMovementLogic : IMovable, ITickable
             return;
         }
 
-        // Normal movement
-        float targetVelocityX = direction.x * currentSpeed;
-        float velocityChangeX = targetVelocityX - _rigidbody.linearVelocity.x;
-        float force = velocityChangeX * _moveData.Acceleration;
-
-        _rigidbody.AddForce(new Vector2(force, 0), ForceMode2D.Force);
-
-        // Apply deceleration when not moving (используем Deceleration вместо Friction)
-        if (Mathf.Abs(direction.x) < 0.1f)
-        {
-            float decelerationForce = -_rigidbody.linearVelocity.x * _moveData.Deceleration;
-            _rigidbody.AddForce(new Vector2(decelerationForce, 0), ForceMode2D.Force);
-        }
+        Vector2 velocity = _rigidbody.linearVelocity;
+        float targetSpeedX = direction.x * _moveData.MoveSpeed;
+        float accelerationMultiplier = _isGrounded ? 1f : _moveData.AirControlMultiplier;
+        float acceleration = _moveData.Acceleration * accelerationMultiplier * Time.deltaTime;
+        float newVelocityX = Mathf.MoveTowards(velocity.x, targetSpeedX, acceleration);
+        
+        _rigidbody.linearVelocity = new Vector2(newVelocityX, velocity.y);
+        _rigidbody.gravityScale = velocity.y < 0 ? _moveData.NormalGravity * _moveData.FallMultiplier * _downSpeedMultiplier : _moveData.NormalGravity;
     }
 
     public void Jump()
@@ -135,6 +131,7 @@ public class PlayerMovementLogic : IMovable, ITickable
         if (_isGrounded && !wasGrounded)
         {
             _jumpCount = 0;
+            _downSpeedMultiplier = 1f;
         }
     }
 
@@ -152,6 +149,11 @@ public class PlayerMovementLogic : IMovable, ITickable
     public void SetSpeedMultiplier(float multiplier)
     {
         _speedMultiplier = multiplier;
+    }
+
+    public void MultiplayDownSpeed(float amount)
+    {
+        _downSpeedMultiplier *= amount;
     }
     
     public void SetStunned(bool stunned)

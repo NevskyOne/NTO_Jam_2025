@@ -16,13 +16,13 @@ MonoBehaviour:
   _maxMoveSpeed: 20
   _acceleration: 100
   _deceleration: 25
-  _jumpForce: 29.4
-  _maxJumpHeight: 4.07
-  _jumpTimeThreshold: 0.18
-  _normalGravity: 6.81
-  _fallMultiplier: 4
+  _jumpForce: 35
+  _maxJumpHeight: 4
+  _jumpTimeThreshold: 0.15
+  _normalGravity: 6.8
+  _fallMultiplier: 1.5
   _dashForce: 50
-  _dashDuration: 0.5
-  _dashCooldown: 1
+  _dashDuration: 0.05
+  _dashCooldown: 0.3
   _airControlMultiplier: 0.66
   _maxJumpCount: 1

@@ -157,11 +157,11 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private void OnGroundChanged(bool grounded)
     {
         Movement.UpdateGrounded(grounded);
+        if(grounded) ((DownAttackLogic)_mainAttackSet[1]).Attacked = false;
         if (grounded && _state == PlayerState.Jumping)
         {
             _state = PlayerState.Idle;
         }
-        Debug.Log($"Ground state changed: {grounded}");
     }
 
 

@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Core.Data.ScriptableObjects.MainAttackData
   <InputBinding>k__BackingField: LeftMouse
   <BaseDamage>k__BackingField: 1
-  <Radius>k__BackingField: 1.5
-  <ForwardOffset>k__BackingField: 0.7
+  <Radius>k__BackingField: 2.5
   <AttackCooldown>k__BackingField: 0.8
+  <ForwardOffset>k__BackingField: 0.7

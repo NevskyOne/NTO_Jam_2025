@@ -23,6 +23,7 @@ public class DownAttackLogic : IAttack
     private Player _player;
     private PlayerInput _input;
     private Coroutine _cooldownRoutine;
+    public bool Attacked;
     
     [Inject]
     private void Construct(Player player, PlayerInput input)
@@ -44,37 +45,45 @@ public class DownAttackLogic : IAttack
 
     public void PerformAttack(Vector2 direction)
     {
-        if (_owner == null || _cooldownRoutine != null) return;
-        _hitObjects.Clear();
+        if (!_owner || _cooldownRoutine != null) return;
+        _player.Movement.MultiplayDownSpeed(2.5f);
 
-        Vector2 dir = Vector2.down;
-        float radius = _data.Radius;
-        int dmg = _data.BaseDamage;
-
-        // Смещаем область атаки вниз от игрока
-        Vector2 attackCenter = (Vector2)_owner.position + Vector2.down * radius * _data.ForwardOffset;
-        Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, radius);
-
-        // Визуализация области атаки для тестирования (рисуем окружность через линии)
-        DrawDebugCircle(attackCenter, radius, Color.blue, 1f);
-
-        foreach (var col in hits)
-        {
-            // Исключаем самого игрока из атаки
-            if (col.transform == _owner) continue;
-            
-            // Проверяем что цель находится ниже игрока
-            if (col.transform.position.y > _owner.position.y) continue;
-            
-            var hittable = col.GetComponent<IHittable>();
-            if (hittable != null && !_hitObjects.Contains(hittable))
-            {
-                _hitObjects.Add(hittable);
-                hittable.TakeDamage(dmg);
-            }
-        }
+        Attacked = true;
+        _player.StartCoroutine(Tick());
 
         _cooldownRoutine = _player.StartCoroutine(CooldownRoutine());
+    }
+
+    public IEnumerator Tick()
+    {
+        while (Attacked)
+        {
+            _hitObjects.Clear();
+            Vector2 attackCenter = (Vector2)_owner.position + Vector2.down * (_data.Radius * _data.ForwardOffset);
+            Debug.Log(attackCenter);
+            Collider2D[] hits = Physics2D.OverlapCircleAll(attackCenter, _data.Radius);
+            
+            // Визуализация области атаки для тестирования (рисуем окружность через линии)
+            DrawDebugCircle(attackCenter, _data.Radius, Color.blue, 0.2f);
+
+            foreach (var col in hits)
+            {
+                // Исключаем самого игрока из атаки
+                if (col.transform == _owner) continue;
+            
+                // Проверяем что цель находится ниже игрока
+                if (col.transform.position.y > _owner.position.y) continue;
+            
+                var hittable = col.GetComponent<IHittable>();
+                if (hittable != null && !_hitObjects.Contains(hittable))
+                {
+                    _hitObjects.Add(hittable);
+                    hittable.TakeDamage( _data.BaseDamage);
+                }
+            }
+
+            yield return new WaitForEndOfFrame();
+        }
     }
 
     private IEnumerator CooldownRoutine()
