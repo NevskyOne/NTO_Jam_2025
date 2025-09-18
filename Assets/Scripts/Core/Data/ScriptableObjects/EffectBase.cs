@@ -114,9 +114,82 @@ namespace Core.Interfaces
             }
             return false;
         }
+        
+        public bool HasEffect<T>() where T : EffectBase
+        {
+            foreach (var e in _active)
+            {
+                if (e is T) return true;
+            }
+            return false;
+        }
+        
+        public T GetEffect<T>() where T : EffectBase
+        {
+            foreach (var e in _active)
+            {
+                if (e is T effect) return effect;
+            }
+            return null;
+        }
     }
 
-#if false
-   
-#endif
+    // Простые эффекты прямо здесь
+    [CreateAssetMenu(fileName = "SpeedEffect", menuName = "Game Data/Effects/Speed Effect")]
+    public class SpeedEffect : EffectBase
+    {
+        [SerializeField] private float _speedMultiplier = 2f;
+        
+        public override void OnApply(GameObject target)
+        {
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetSpeedMultiplier(_speedMultiplier);
+        }
+        
+        public override void OnRemove(GameObject target)
+        {
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetSpeedMultiplier(1f);
+        }
+    }
+    
+    [CreateAssetMenu(fileName = "StunEffect", menuName = "Game Data/Effects/Stun Effect")]
+    public class StunEffect : EffectBase
+    {
+        public override void OnApply(GameObject target)
+        {
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetStunned(true);
+        }
+        
+        public override void OnRemove(GameObject target)
+        {
+            var movement = target.GetComponent<PlayerMovementLogic>();
+            movement?.SetStunned(false);
+        }
+    }
+    
+    [CreateAssetMenu(fileName = "PoisonEffect", menuName = "Game Data/Effects/Poison Effect")]
+    public class PoisonEffect : EffectBase
+    {
+        [SerializeField] private int _damagePerTick = 1;
+        
+        public override void OnApply(GameObject target)
+        {
+            var player = target.GetComponent<Player>();
+            if (player != null)
+                player.StartCoroutine(PoisonTick(target));
+        }
+        
+        private IEnumerator PoisonTick(GameObject target)
+        {
+            var runner = target.GetComponent<EffectRunner>();
+            while (runner != null && runner.HasEffect<PoisonEffect>())
+            {
+                yield return new WaitForSeconds(1f);
+                var hittable = target.GetComponent<IHittable>();
+                hittable?.TakeDamage(_damagePerTick);
+            }
+        }
+    }
 }

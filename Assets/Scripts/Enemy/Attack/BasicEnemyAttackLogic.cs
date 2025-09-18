@@ -6,6 +6,7 @@ using UnityEngine;
 public class BasicEnemyAttackLogic : MonoBehaviour, IAttack
 {
     [SerializeField] private BasicEnemyAttackDataSO _data;
+    [SerializeField] private EffectBase _attackEffect; // Эффект который накладывает атака
     
     private Coroutine _cooldownCoroutine;
     
@@ -40,6 +41,12 @@ public class BasicEnemyAttackLogic : MonoBehaviour, IAttack
             if (hittable != null)
             {
                 hittable.TakeDamage(_data.BaseDamage);
+                
+                // Применяем эффект если он есть
+                if (_attackEffect != null)
+                {
+                    _attackEffect.ApplyEffect(hit.gameObject);
+                }
             }
         }
         
@@ -50,5 +57,11 @@ public class BasicEnemyAttackLogic : MonoBehaviour, IAttack
     {
         yield return new WaitForSeconds(_data.AttackCooldown);
         _cooldownCoroutine = null;
+    }
+    
+    // Метод для настройки эффекта атаки
+    public void SetAttackEffect(EffectBase effect)
+    {
+        _attackEffect = effect;
     }
 }
