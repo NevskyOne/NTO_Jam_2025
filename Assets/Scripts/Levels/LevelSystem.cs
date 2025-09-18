@@ -7,6 +7,7 @@ public class LevelSystem : MonoBehaviour
 {
 	private LevelData _levelData;
 	private MainUIInteractions _mainUI;
+	private Player _player; 
 	
 	void Awake()
 	{
@@ -14,9 +15,10 @@ public class LevelSystem : MonoBehaviour
 	}
 	
 	[Inject]
-	public void Construct(MainUIInteractions mainUI)
+	public void Construct(MainUIInteractions mainUI, Player player)
 	{
 		_mainUI = mainUI;
+		_player = player;
 	}
 
 	[YarnCommand("RequestNewLevel")]
