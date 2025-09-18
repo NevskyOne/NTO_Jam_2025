@@ -49,5 +49,6 @@ public class LevelSystem : MonoBehaviour
 	public void LoadLevel()
 	{
 		SceneManager.LoadScene(_levelData.SceneId);
+		if(_levelData.SceneId == 0) _player.AddReputation();
 	}
 }
