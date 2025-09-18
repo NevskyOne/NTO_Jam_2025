@@ -43,6 +43,7 @@ public class ParryAttackLogic : IAttack
     public void PerformAttack(Vector2 direction)
     {
         if (_owner == null || _cooldownRoutine != null) return;
+        _player.AnimLogic.Block();
         // Логика парирования - создаем защитную область вокруг игрока
         float radius = _data.Radius;
         Collider2D[] hits = Physics2D.OverlapCircleAll(_owner.position, radius);

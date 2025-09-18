@@ -79,6 +79,8 @@ public class MainAttackLogic : IAttack
             Debug.LogError($"[{GetType().Name}] Data is null. Assign MainAttackData in PlayerDataSO.AttackSet.");
             return;
         }
+
+        _player.AnimLogic.Fight();
         
         _hitObjects.Clear();
         if (direction == Vector2.zero) direction = Vector2.right;

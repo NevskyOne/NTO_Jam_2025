@@ -11,6 +11,7 @@ using UnityEngine.Rendering.Universal;
 public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 {
     [Header("Components")]
+    [SerializeField] private Animator _animator;
     [SerializeField] private Rigidbody2D _rigidbody;
     [SerializeField] private Collider2D _collider;
     [SerializeField] private GroundChecker _groundChecker;
@@ -41,8 +42,11 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private CurrentPlayerData _data = new CurrentPlayerData();
     private MainUIInteractions _mainUI;
     private int _currentPills;
+    private PlayerAnimationLogic _animLogic;
 
     private IInteractable _currentInteractable;
+    
+    public PlayerAnimationLogic AnimLogic => _animLogic;
     public PlayerState State => _state;
     public CurrentPlayerData Data => _data;
     public Transform DialogueBubblePos => _dialogueBubblePos;
@@ -65,6 +69,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 
     private void Awake()
     {
+        _animLogic = new PlayerAnimationLogic(_animator);
         // Защита от NullReferenceException
         if (_playerData == null) 
         {
@@ -157,7 +162,11 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private void OnGroundChanged(bool grounded)
     {
         Movement.UpdateGrounded(grounded);
-        if(grounded) ((DownAttackLogic)_mainAttackSet[1]).Attacked = false;
+        if (grounded)
+        {
+            _animLogic.Land();
+            ((DownAttackLogic)_mainAttackSet[1]).Attacked = false;
+        }
         if (grounded && _state == PlayerState.Jumping)
         {
             _state = PlayerState.Idle;
@@ -168,19 +177,19 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public void AddAbility(FoodUI foodUI)
     {
 
-        if (_abilitiesSet[0] == null)
+        if (_abilitiesSet.Count > 0 && _abilitiesSet[0] == null)
         {
             _abilitiesSet[0] = foodUI.Food;
             foodUI.Food.Activate();
             _data.UsedFood[0] = foodUI.Id;
         }
-        else if (_abilitiesSet[1] == null)
+        else if (_abilitiesSet.Count > 1 && _abilitiesSet[1] == null)
         {
             _abilitiesSet[1] = foodUI.Food;
             foodUI.Food.Activate();
             _data.UsedFood[1] = foodUI.Id;
         }
-        else if (_abilitiesSet[2] == null)
+        else if (_abilitiesSet.Count > 2 && _abilitiesSet[2] == null)
         {
             _abilitiesSet[2] = foodUI.Food;
             foodUI.Food.Activate();

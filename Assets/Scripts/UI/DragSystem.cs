@@ -7,6 +7,7 @@ public class DragSystem
 {
     private PlayerInput _playerInput;
     private Vector2 _initPos;
+    private Transform _originParent;
     public DropTrigger OverUIElement { get; set; }
     
     [Inject]
@@ -18,6 +19,8 @@ public class DragSystem
     public void GrabObj(Transform obj)
     {
         _initPos = obj.position;
+        _originParent = obj.parent;
+        obj.SetParent(obj.parent.parent);
     }
     
     public void MoveObj(Transform obj)
@@ -34,6 +37,7 @@ public class DragSystem
         else
         {
             obj.position = _initPos;
+            obj.SetParent(_originParent);
         }
     }
 }

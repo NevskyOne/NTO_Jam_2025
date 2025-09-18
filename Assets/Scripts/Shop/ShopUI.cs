@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Zenject;
 
 public class ShopUI : MonoBehaviour
 {
@@ -9,6 +10,21 @@ public class ShopUI : MonoBehaviour
     [SerializeField] private Transform _priceLayoutGroup;
     [SerializeField] private List<FoodUI> _defaultFoods;
 
+     private DiContainer _diContainer;
+     private ShopSystem _shopSystem;
+
+    [Inject]
+    public void Construct(DiContainer container, ShopSystem system)
+    {
+        _diContainer = container;
+        _shopSystem = system;
+    }
+
+    public void Awake()
+    {
+        _shopSystem.SpawnFood();
+    }
+    
     public void SpawnFood(int food)
     {
         // Проверка границ массива для предотвращения ArgumentOutOfRangeException
@@ -18,7 +34,7 @@ public class ShopUI : MonoBehaviour
             return;
         }
 
-        Instantiate(_defaultFoods[food].gameObject, _foodLayoutGroup);
+        var foodObj = _diContainer.InstantiatePrefab(_defaultFoods[food].gameObject, _foodLayoutGroup);
         Instantiate(_pricePrefab, _priceLayoutGroup);
         _pricePrefab.GetComponentInChildren<TMP_Text>().text = _defaultFoods[food].Price.ToString();
     }

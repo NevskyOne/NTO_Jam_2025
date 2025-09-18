@@ -19,7 +19,6 @@ public class FoodUI : MonoBehaviour
     }
 
 	public void OnDragBegin(){
-		print("begin");
 		_dragSystem.GrabObj(transform);
 	}
 
@@ -28,7 +27,6 @@ public class FoodUI : MonoBehaviour
 	}
 
 	public void OnDragEnd(){
-		print("end");
 		_dragSystem.DropObj(transform);
 	}
 }

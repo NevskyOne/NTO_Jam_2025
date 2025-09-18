@@ -18,6 +18,7 @@ public class BubbleUI : MonoBehaviour
     
     public void MoveToTarget(Transform target)
     {
+        print(target);
         var screenPos = _cam.WorldToScreenPoint(target.position);
         _bubbleTf.position = screenPos; 
     }
