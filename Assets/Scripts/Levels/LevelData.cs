@@ -1,12 +1,8 @@
+using UnityEngine;
 
 public class LevelData
 {
-	public readonly int SceneId;
+    [field: SerializeReference] public int SceneId {get; private set;}
 	public bool OneHp;
-	public bool NoHeal;
-
-	public LevelData(int id)
-	{
-		SceneId = id;
-	}
+	public bool DoubleEnemiesHP;
 }

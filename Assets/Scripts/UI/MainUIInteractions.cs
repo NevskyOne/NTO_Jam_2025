@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -9,22 +8,16 @@ using Zenject;
 
 public class MainUIInteractions : MonoBehaviour, IDisposable
 {
-    [Header("UI")]
     [SerializeField] private GameObject _gameplay;
     [SerializeField] private GameObject _pauseMenu;
     [SerializeField] private GameObject _shop;
     [SerializeField] private GameObject _inventory;
     [SerializeField] private GameObject _deathScreen;
-    [SerializeField] private GameObject _levelSelectionMenu;
-    [SerializeField] private GameObject _levelCompleteMenu;
     [Header("ShopCam")]
     [SerializeField] private float _lerpSpeed;
     [SerializeField] private Transform _newCamPos;
     [SerializeField] private LayerMask _layerNoCharacters;
     [SerializeField] private int _targetPixelRes;
-    [Header("text")] 
-    [SerializeField] private TMP_Text _moneyText;
-    [SerializeField] private TMP_Text _repText;
     
     private Vector2 _lastCamPos;
     private LayerMask _defaultLayer;
@@ -82,13 +75,6 @@ public class MainUIInteractions : MonoBehaviour, IDisposable
         _state = active? UIState.Pause : UIState.Gameplay;
     }
     
-    public void ChangeLevelSelectionState(bool active)
-    {
-        _levelSelectionMenu.SetActive(active);
-        _gameplay.SetActive(!active);
-        _state = active? UIState.LevelSelection : UIState.Gameplay;
-    }
-    
     public void ChangeInventoryState(bool active)
     {
         _inventory.SetActive(active);
@@ -123,7 +109,9 @@ public class MainUIInteractions : MonoBehaviour, IDisposable
             if(_zoomRoutine != null) StopCoroutine(_zoomRoutine);
             _zoomRoutine = StartCoroutine(CamZoomRoutine(_pixelCam.assetsPPU, _lastPixelRes));
         }
+        
         _shop.SetActive(active);
+        _gameplay.SetActive(!active);
         _state = active? UIState.Shop : UIState.Gameplay;
     }
 
@@ -139,12 +127,6 @@ public class MainUIInteractions : MonoBehaviour, IDisposable
 
         _zoomRoutine = null;
     }
-
-    public void UpdateText()
-    {
-        _moneyText.text = _player.Data.Money.ToString();
-        _repText.text = _player.Data.Reputation.ToString();
-    }
 }
 
 public enum UIState
@@ -153,7 +135,6 @@ public enum UIState
     Pause,
     CutScene,
     Inventory,
-    LevelSelection,
     Shop,
     Dead
 }

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d564a73e5319364abc6305a48c9562a, type: 3}
+  m_Name: BasicEnemyAttackData-spider
+  m_EditorClassIdentifier: Assembly-CSharp::BasicEnemyAttackDataSO
+  <InputBinding>k__BackingField: 
+  <BaseDamage>k__BackingField: 2
+  <Radius>k__BackingField: 2
+  <AttackCooldown>k__BackingField: 1.5
+  _mode: 0
