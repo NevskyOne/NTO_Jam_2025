@@ -7,7 +7,7 @@ using UnityEngine.Rendering.Universal;
 
 public class GameplayInstaller : MonoInstaller
 {
-    [Header("Data")] [SerializeField] private PlayerDataSO _playerDataSo;
+    [Header("Data")] [SerializeField]  private PlayerDataSO _playerDataSo;
     [SerializeField] private MoveDataSO _moveDataSo;
 
     [Header("Components")]
@@ -15,6 +15,7 @@ public class GameplayInstaller : MonoInstaller
 
     private ShopSystem _shopSystem;
     private DragSystem _dragSystem;
+
 
     public override void InstallBindings()
     {

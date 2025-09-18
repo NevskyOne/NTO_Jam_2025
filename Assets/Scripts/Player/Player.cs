@@ -282,6 +282,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     public void TakeDamage(int amount)
     {
         if (_state == PlayerState.Parrying) return;
+        
         _data.Health = Mathf.Max(0, _data.Health - Mathf.CeilToInt(amount));
         if (_data.Health <= 0) Die();
     }
@@ -344,7 +345,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             
             if (attack is MainAttackLogic)
             {
-                var data = attack.Data as Core.Data.ScriptableObjects.MainAttackData;
+                var data = attack.Data as MainAttackData;
                 if (data == null) continue;
                 float radius = data.Radius;
                 Vector2 center = pos + face * radius * data.ForwardOffset;
@@ -355,7 +356,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             
             if (attack is DownAttackLogic)
             {
-                var data = attack.Data as Core.Data.ScriptableObjects.MainAttackData;
+                var data = attack.Data as MainAttackData;
                 if (data == null) continue;
                 float radius = data.Radius;
                 Vector2 center = pos + Vector2.down * radius * data.ForwardOffset;
@@ -366,7 +367,7 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
             
             if (attack is ParryAttackLogic)
             {
-                var data = attack.Data as Core.Data.ScriptableObjects.ParryAttackData;
+                var data = attack.Data as ParryAttackData;
                 if (data == null) continue;
                 float radius = data.Radius;
                 Gizmos.color = Color.green;

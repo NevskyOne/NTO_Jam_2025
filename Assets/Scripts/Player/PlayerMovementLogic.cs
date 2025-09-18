@@ -15,8 +15,14 @@ public class PlayerMovementLogic : IMovable, ITickable
     private float _dashDurationTimer;
     private float _moveInputX; // cached horizontal input
     
+    // Эффекты
+    private float _speedMultiplier = 1f;
+    private bool _isStunned = false;
+    
     public Vector2 LastDirection { get; private set; } = Vector2.right;
     public bool IsGrounded() => _isGrounded;
+    public float CurrentMoveSpeed => _moveData != null ? _moveData.MoveSpeed * _speedMultiplier : 0f;
+    
     private Player _player;
     private PlayerInput _input;
 
@@ -48,91 +54,110 @@ public class PlayerMovementLogic : IMovable, ITickable
     }
     
     public PlayerMovementLogic() {}
-    
+
     public void Move(Vector2 direction)
     {
-        if (_rigidbody == null) return;
-        if (_moveData == null)
+        // Проверки на null
+        if (_moveData == null || _player == null || _player.CameraTarget == null || _rigidbody == null) return;
+        
+        // Если оглушен - не можем двигаться
+        if (_isStunned)
         {
-            Debug.LogError("[PlayerMovementLogic] _moveData не назначен. Проверьте ссылку в GameplayInstaller.");
-            return;
-        }
-        if (_player == null) return;
-
-        if (_player != null && _player.State is Player.PlayerState.Attacking or Player.PlayerState.Parrying or Player.PlayerState.Dashing)
-        {
+            _rigidbody.linearVelocity = new Vector2(0, _rigidbody.linearVelocity.y);
             return;
         }
 
-        LastDirection = direction;
+        // Обновляем таймеры
+        if (_dashCooldownTimer > 0) _dashCooldownTimer -= Time.fixedDeltaTime;
+        if (_dashDurationTimer > 0) _dashDurationTimer -= Time.fixedDeltaTime;
+
+        // Применяем эффекты скорости
+        float currentSpeed = _moveData.MoveSpeed * _speedMultiplier;
         
-        // Безопасное обращение к CameraTarget
-        if (_player.CameraTarget != null)
+        // Горизонтальное движение
+        if (direction.x != 0)
         {
-            if (direction.x > 0) _player.CameraTarget.localPosition = new Vector3(0.5f, 1, 0);
-            else if (direction.x < 0) _player.CameraTarget.localPosition = new Vector3(-0.5f, 1, 0);
+            LastDirection = new Vector2(direction.x, 0).normalized;
+            _player.CameraTarget.localPosition = new Vector3(direction.x * 2, 1, 0);
         }
-        
-        // Обновляем таймер dash кулдауна
-        if (_dashCooldownTimer > 0)
-        {
-            _dashCooldownTimer -= Time.deltaTime;
-        }
-        
-        // Обновляем таймер dash длительности
+
+        // Dash logic
         if (_dashDurationTimer > 0)
         {
-            _dashDurationTimer -= Time.deltaTime;
+            _rigidbody.linearVelocity = new Vector2(LastDirection.x * _moveData.DashForce, _rigidbody.linearVelocity.y);
+            return;
         }
-        
-        Vector2 velocity = _rigidbody.linearVelocity;
-        float targetSpeedX = direction.x * _moveData.MoveSpeed;
-        float accelerationMultiplier = _isGrounded ? 1f : _moveData.AirControlMultiplier;
-        float acceleration = _moveData.Acceleration * accelerationMultiplier * Time.deltaTime;
-        float newVelocityX = Mathf.MoveTowards(velocity.x, targetSpeedX, acceleration);
-        
-        _rigidbody.linearVelocity = new Vector2(newVelocityX, velocity.y);
-        _rigidbody.gravityScale = velocity.y < 0 ? _moveData.FallMultiplier : _moveData.NormalGravity;
+
+        // Normal movement
+        float targetVelocityX = direction.x * currentSpeed;
+        float velocityChangeX = targetVelocityX - _rigidbody.linearVelocity.x;
+        float force = velocityChangeX * _moveData.Acceleration;
+
+        _rigidbody.AddForce(new Vector2(force, 0), ForceMode2D.Force);
+
+        // Apply deceleration when not moving (используем Deceleration вместо Friction)
+        if (Mathf.Abs(direction.x) < 0.1f)
+        {
+            float decelerationForce = -_rigidbody.linearVelocity.x * _moveData.Deceleration;
+            _rigidbody.AddForce(new Vector2(decelerationForce, 0), ForceMode2D.Force);
+        }
     }
-    
+
     public void Jump()
     {
-        if (_rigidbody == null) return;
-        int maxJumps = _moveData.MaxJumpCount + _extraJumps;
-        if (!_isGrounded && _jumpCount >= maxJumps) return;
-        _jumpCount++;
-        _rigidbody.linearVelocity = new Vector2(_rigidbody.linearVelocity.x, _moveData.JumpForce);
+        if (_moveData == null || _rigidbody == null || _isStunned) return;
+
+        // Используем MaxJumpCount вместо MaxJumps
+        if (_isGrounded || _jumpCount < _moveData.MaxJumpCount + _extraJumps)
+        {
+            _rigidbody.linearVelocity = new Vector2(_rigidbody.linearVelocity.x, _moveData.JumpForce);
+            if (!_isGrounded) _jumpCount++;
+        }
     }
-    
+
     public void Dash(Vector2 direction)
     {
-        if (_rigidbody == null) return;
-        if (_dashCooldownTimer > 0) return;
-        if (direction == Vector2.zero) direction = Vector2.right;
+        if (_moveData == null || _rigidbody == null || _isStunned) return;
         
-        Vector2 dashVelocity = direction.normalized * _moveData.DashForce;
-        
-        if (_rigidbody.linearVelocity.y < 0)
+        if (_dashCooldownTimer <= 0 && direction != Vector2.zero)
         {
-            dashVelocity.y = _rigidbody.linearVelocity.y * 0.5f;
+            _dashCooldownTimer = _moveData.DashCooldown;
+            _dashDurationTimer = _moveData.DashDuration;
+            LastDirection = direction.normalized;
         }
-        
-        _rigidbody.linearVelocity = dashVelocity;
-        _dashCooldownTimer = _moveData.DashCooldown;
-        _dashDurationTimer = _moveData.DashDuration;
     }
-    
-    public void UpdateGrounded(bool isGrounded)
+
+    public void UpdateGrounded(bool grounded)
     {
-        _isGrounded = isGrounded;
-        if (_isGrounded)
+        bool wasGrounded = _isGrounded;
+        _isGrounded = grounded;
+        
+        if (_isGrounded && !wasGrounded)
         {
             _jumpCount = 0;
         }
     }
-    
-    public void SetExtraJumps(int extra)
+
+    public void AddExtraJump(int amount)
     {
-        _extraJumps = Mathf.Max(0, extra);
+        _extraJumps += amount;
     }
+
+    public void RemoveExtraJump(int amount)
+    {
+        _extraJumps = Mathf.Max(0, _extraJumps - amount);
+    }
+    
+    // Методы для эффектов
+    public void SetSpeedMultiplier(float multiplier)
+    {
+        _speedMultiplier = multiplier;
+    }
+    
+    public void SetStunned(bool stunned)
+    {
+        _isStunned = stunned;
+    }
+    
+    public bool IsStunned => _isStunned;
 }
