@@ -4,12 +4,14 @@ using UnityEngine;
 using Zenject;
 using Core.Data.ScriptableObjects;
 using Core.Interfaces;
+using Unity.VisualScripting;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 
 public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
 {
     [Header("Components")]
+    [SerializeField] private Animator _animator;
     [SerializeField] private Rigidbody2D _rigidbody;
     [SerializeField] private Collider2D _collider;
     [SerializeField] private GroundChecker _groundChecker;
@@ -38,9 +40,13 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private Coroutine _foodDeactivationRoutine;
     
     private CurrentPlayerData _data = new CurrentPlayerData();
+    private MainUIInteractions _mainUI;
     private int _currentPills;
+    private PlayerAnimationLogic _animLogic;
 
     private IInteractable _currentInteractable;
+    
+    public PlayerAnimationLogic AnimLogic => _animLogic;
     public PlayerState State => _state;
     public CurrentPlayerData Data => _data;
     public Transform DialogueBubblePos => _dialogueBubblePos;
@@ -50,19 +56,20 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     [SerializeField] private bool _showAttackGizmos = true;
 
     [Inject]
-    private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input, PlayerMovementLogic movement, DiContainer container)
+    private void Construct(PlayerDataSO playerData, MoveDataSO moveData, PlayerInput input, PlayerMovementLogic movement, DiContainer container, MainUIInteractions mainUI)
     {
         
         _playerData = playerData;
         _moveData = moveData;
         _playerInput = input; 
         _container = container;
-
+        _mainUI = mainUI;
         _movement = movement;
     }
 
     private void Awake()
     {
+        _animLogic = new PlayerAnimationLogic(_animator);
         // Защита от NullReferenceException
         if (_playerData == null) 
         {
@@ -85,8 +92,9 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         
         if (_playerData != null)
         {
-            if (_data.Health <= 0 || _data.Health > _playerData.MaxHealth)
-                _data.Health = _playerData.MaxHealth;
+            _data.Health = _playerData.MaxHealth;
+            _data.Money = _playerData.StartMoney;
+            _data.Reputation = _playerData.StartReputation;
         }
 
         if (_mainAttackSet != null)
@@ -97,6 +105,8 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
                 Debug.Log($"Attack[{i}]: {a?.GetType().Name} binding='{a?.Data?.InputBinding}'");
             }
         }
+        
+        _mainUI.UpdateText();
     }
 
     private void OnEnable()
@@ -152,7 +162,11 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     private void OnGroundChanged(bool grounded)
     {
         Movement.UpdateGrounded(grounded);
-        if(grounded) ((DownAttackLogic)_mainAttackSet[1]).Attacked = false;
+        if (grounded)
+        {
+            _animLogic.Land();
+            ((DownAttackLogic)_mainAttackSet[1]).Attacked = false;
+        }
         if (grounded && _state == PlayerState.Jumping)
         {
             _state = PlayerState.Idle;
@@ -160,62 +174,85 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     }
 
 
-    private void AddAbility(int toSlot, IAttack food, int foodId)
+    public void AddAbility(FoodUI foodUI)
     {
-        if (_abilitiesSet[toSlot] != null)
+
+        if (_abilitiesSet.Count > 0 && _abilitiesSet[0] == null)
         {
-            _data.InventoryFood.Add(_data.UsedFood[toSlot]);
+            _abilitiesSet[0] = foodUI.Food;
+            foodUI.Food.Activate();
+            _data.UsedFood[0] = foodUI.Id;
         }
-        _abilitiesSet[toSlot] = food;
-        _data.UsedFood[toSlot] = foodId;
+        else if (_abilitiesSet.Count > 1 && _abilitiesSet[1] == null)
+        {
+            _abilitiesSet[1] = foodUI.Food;
+            foodUI.Food.Activate();
+            _data.UsedFood[1] = foodUI.Id;
+        }
+        else if (_abilitiesSet.Count > 2 && _abilitiesSet[2] == null)
+        {
+            _abilitiesSet[2] = foodUI.Food;
+            foodUI.Food.Activate();
+            _data.UsedFood[2] = foodUI.Id;
+        }
+        else
+        {
+            AbilityToInventory(foodUI);
+            foodUI.State = FoodState.Inventory;
+            return;
+        }
+        foodUI.State = FoodState.Abilities;
     }
     
-    private void MoveAbility(IAttack inventFood, int inventFoodId, IAttack useFood, int useFoodId)
+    public void SwitchAbility(FoodUI inventory, int slot)
     {
+        var indexOfInvent = _data.InventoryFood.IndexOf(inventory.Id);
         
+        (_data.UsedFood[slot], _data.InventoryFood[indexOfInvent]) = (inventory.Id, _data.UsedFood[slot]);
+        _abilitiesSet[slot].Deactivate();
+        _abilitiesSet[slot] = inventory.Food;
+        _abilitiesSet[slot].Activate();
+        inventory.State = FoodState.Abilities;
+    }
+
+    public void AbilityToMain(FoodUI inventory, int slot)
+    {
+        if (_abilitiesSet[slot] != null)
+        {
+            SwitchAbility(inventory, slot);
+        }
+        else
+        {
+            AddAbility(inventory);
+        }
+    }
+
+    public void AbilityToInventory(FoodUI food)
+    {
+        _data.InventoryFood.Add(food.Id);
+        food.Food.Deactivate();
     }
     
-    private void SwitchAbility(int fromSlot, int toSlot)
+    public void SwitchAbility(int fromSlot, int toSlot)
     {
         (_abilitiesSet[fromSlot], _abilitiesSet[toSlot]) = (_abilitiesSet[toSlot], _abilitiesSet[fromSlot]);
+        (_data.UsedFood[fromSlot], _data.UsedFood[toSlot]) = (_data.UsedFood[toSlot], _data.UsedFood[fromSlot]);
     }
     
     
     public void UseFood(int slot)
     {
-        Debug.Log($"🍽️ [UseFood] Попытка использовать еду в слоте {slot}");
-        
-        if (_abilitiesSet == null)
-        {
-            Debug.LogError("🍽️ [UseFood] _abilitiesSet is null!");
-            return;
-        }
-        
-        if (slot < 0 || slot >= _abilitiesSet.Count)
-        {
-            Debug.LogError($"🍽️ [UseFood] Неверный слот {slot}. Доступно слотов: {_abilitiesSet.Count}");
-            return;
-        }
-        
-        if (_abilitiesSet[slot] == null)
-        {
-            Debug.LogError($"🍽️ [UseFood] Еда в слоте {slot} равна null!");
-            return;
-        }
-        
-        Debug.Log($"🍽️ [UseFood] Активируем способность в слоте {slot}: {_abilitiesSet[slot].GetType().Name}");
+        if (_abilitiesSet == null || slot < 0 || slot >= _abilitiesSet.Count || _abilitiesSet[slot] == null) return;
+        Debug.Log($"Use ability slot={slot}");
         _abilitiesSet[slot].Activate();
-        
         var mainToDeactivate = _mainAttackSet.Find(attack => attack.Data.InputBinding == _abilitiesSet[slot].Data.InputBinding);
         if (mainToDeactivate != null)
         {
-            Debug.Log($"🍽️ [UseFood] Деактивируем основную атаку: {mainToDeactivate.GetType().Name}");
             mainToDeactivate.Deactivate();
             _foodDeactivationRoutine = StartCoroutine(FoodDeactivationRoutine(_abilitiesSet[slot], mainToDeactivate));
         }
         else
         {
-            Debug.Log($"🍽️ [UseFood] Основная атака для деактивации не найдена");
             _foodDeactivationRoutine = StartCoroutine(FoodDeactivationRoutine(_abilitiesSet[slot]));
         }
     }
@@ -261,7 +298,19 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
     
     public void Die()
     {
-        Debug.Log("Player died!");
+        _mainUI.ChangeDeathState(true);
+    }
+
+    public void AddReputation()
+    {
+        _data.Reputation += 1;
+        _mainUI.UpdateText();
+    }
+    
+    public void AddMoney(int amount)
+    {
+        _data.Money += Mathf.Clamp(amount, 0, 999999999);
+        _mainUI.UpdateText();
     }
     
     public bool TryBuy(int price)
@@ -281,24 +330,10 @@ public class Player : MonoBehaviour, IHittable, IHealable, IEffectHandler
         _currentPills -= 1;
     }
     
-    private void OnFood1(InputAction.CallbackContext ctx) 
-    { 
-        Debug.Log("🍽️ [Input] Нажата клавиша 1 - активация еды слот 0");
-        UseFood(0);
-    }
-    
-    private void OnFood2(InputAction.CallbackContext ctx) 
-    { 
-        Debug.Log("🍽️ [Input] Нажата клавиша 2 - активация еды слот 1");
-        UseFood(1);
-    }
-    
-    private void OnFood3(InputAction.CallbackContext ctx) 
-    { 
-        Debug.Log("🍽️ [Input] Нажата клавиша 3 - активация еды слот 2");
-        UseFood(2);
-    }
-    
+    private void OnFood1(InputAction.CallbackContext ctx) => UseFood(0);
+    private void OnFood2(InputAction.CallbackContext ctx) => UseFood(1);
+    private void OnFood3(InputAction.CallbackContext ctx) => UseFood(2);
+
     private void OnDrawGizmosSelected()
     {
         if (!_showAttackGizmos) return;

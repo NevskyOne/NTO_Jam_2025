@@ -59,7 +59,10 @@ public class PlayerMovementLogic : IMovable, ITickable
     public void Move(Vector2 direction)
     {
         // Проверки на null
-        if (_moveData == null || _player == null || _player.CameraTarget == null || _rigidbody == null) return;
+        if (!_moveData || !_player || !_player.CameraTarget || !_rigidbody)
+        {
+            return;
+        }
         
         // Если оглушен - не можем двигаться
         if (_isStunned)
@@ -78,8 +81,14 @@ public class PlayerMovementLogic : IMovable, ITickable
         // Горизонтальное движение
         if (direction.x != 0)
         {
+            _player.AnimLogic.Walk(true);
             LastDirection = new Vector2(direction.x, 0).normalized;
             _player.CameraTarget.localPosition = new Vector3(direction.x * 2, 1, 0);
+            _player.AnimLogic.Flip(direction.x < 0);
+        }
+        else
+        {
+            _player.AnimLogic.Walk(false);
         }
 
         // Dash logic
@@ -88,7 +97,8 @@ public class PlayerMovementLogic : IMovable, ITickable
             _rigidbody.linearVelocity = new Vector2(LastDirection.x * _moveData.DashForce, _rigidbody.linearVelocity.y);
             return;
         }
-
+        
+        
         Vector2 velocity = _rigidbody.linearVelocity;
         float targetSpeedX = direction.x * _moveData.MoveSpeed;
         float accelerationMultiplier = _isGrounded ? 1f : _moveData.AirControlMultiplier;
@@ -101,8 +111,8 @@ public class PlayerMovementLogic : IMovable, ITickable
 
     public void Jump()
     {
-        if (_moveData == null || _rigidbody == null || _isStunned) return;
-
+        if (_moveData == null || _rigidbody == null || _isStunned || _moveData.JumpForce == 0) return;
+        _player.AnimLogic.Jump();
         // Используем MaxJumpCount вместо MaxJumps
         if (_isGrounded || _jumpCount < _moveData.MaxJumpCount + _extraJumps)
         {

@@ -10,19 +10,21 @@ public class ShopSystem
 	private ShopUI _shopUI;
 
 	[Inject]
-    private void Construct(Player player, [InjectOptional] ShopUI shop)
+    private void Construct(Player player, ShopUI shop)
     {
         _player = player;
         _shopUI = shop;
         
-        // Если ShopUI отсутствует или игрок не инициализирован, выходим
-        if (_shopUI == null || _player == null || _player.Data == null) return;
-        
-        foreach (var food in _defaultFood.Where(x => !_player.Data.InventoryFood.Contains(x) && !_player.Data.InventoryFood.Contains(x)))
-        {
-	        _shopUI.SpawnFood(food);
-        }
+        // Если ShopUI отсутствует или игрок не инициализирован, выхо
     }
+
+	public void SpawnFood()
+	{
+		foreach (var food in _defaultFood.Where(x => !_player.Data.InventoryFood.Contains(x) && !_player.Data.InventoryFood.Contains(x)))
+		{
+			_shopUI.SpawnFood(food);
+		}
+	}
 
     public void BuyFood(FoodUI food){
         if (_player == null) return;
